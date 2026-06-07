@@ -1,0 +1,6 @@
+aiogram
+pandas
+matplotlib
+openpyxl
+python-telegram-bot
+flask
