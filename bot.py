@@ -14,8 +14,8 @@ from openpyxl.utils import get_column_letter
 
 # ========== КОНФИГ ==========
 BOT_TOKEN = "8584035526:AAG8Q15ym8TONEAOH4_8_eQaXnsV4VhhIYs"
-ADMIN_ID = 123456789            # ⚠️ ВСТАВЬ СВОЙ TELEGRAM ID
-REQUIRED_CHANNEL = "@ваш_канал" # ⚠️ ВСТАВЬ СВОЙ КАНАЛ (с @)
+ADMIN_ID = 7643347668           # ⚠️ ВСТАВЬ СВОЙ TELEGRAM ID
+REQUIRED_CHANNEL = "@ShadowFXTrader" # ⚠️ ВСТАВЬ СВОЙ КАНАЛ (с @)
 
 DB_NAME = "trades.db"
 BT_DB_NAME = "backtests.db"
