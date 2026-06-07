@@ -14,16 +14,12 @@ from openpyxl.utils import get_column_letter
 
 # ========== КОНФИГ ==========
 BOT_TOKEN = "8584035526:AAG8Q15ym8TONEAOH4_8_eQaXnsV4VhhIYs"
-ADMIN_ID = 7643347668
-REQUIRED_CHANNEL = "@ShadowFXTrader"
-
 DB_NAME = "trades.db"
 BT_DB_NAME = "backtests.db"
 
 # ========== ЛОКАЛИЗАЦИЯ ==========
 TEXTS = {
     "ru": {
-        "subscribe_required": "📢 **Подпишитесь на наш канал, чтобы пользоваться ботом!**\n\n👉 {channel}\n\nПосле подписки нажмите /start снова.",
         "select_mode": "🎛 **Выберите режим работы:**",
         "mode_real": "📊 Реальная торговля",
         "mode_backtest": "🔄 Бэктест",
@@ -102,7 +98,6 @@ TEXTS = {
         "bt_quality": "⭐ Качество сигнала: {q:.1f}/5"
     },
     "en": {
-        "subscribe_required": "📢 **Subscribe to our channel to use the bot!**\n\n👉 {channel}\n\nAfter subscribing, press /start again.",
         "select_mode": "🎛 **Select mode:**",
         "mode_real": "📊 Real Trading",
         "mode_backtest": "🔄 Backtest",
@@ -214,8 +209,6 @@ def init_dbs():
     conn.close()
     conn = sqlite3.connect(DB_NAME)
     conn.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, lang TEXT DEFAULT 'ru')")
-    conn.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
-    conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('channel', ?)", (REQUIRED_CHANNEL,))
     conn.commit()
     conn.close()
 
@@ -230,20 +223,6 @@ def get_user_lang(user_id):
 def set_user_lang(user_id, lang):
     conn = sqlite3.connect(DB_NAME)
     conn.execute("INSERT OR REPLACE INTO users (user_id, lang) VALUES (?, ?)", (user_id, lang))
-    conn.commit()
-    conn.close()
-
-def get_required_channel():
-    conn = sqlite3.connect(DB_NAME)
-    cur = conn.cursor()
-    cur.execute("SELECT value FROM settings WHERE key='channel'")
-    r = cur.fetchone()
-    conn.close()
-    return r[0] if r else "@ваш_канал"
-
-def set_required_channel(channel):
-    conn = sqlite3.connect(DB_NAME)
-    conn.execute("UPDATE settings SET value=? WHERE key='channel'", (channel,))
     conn.commit()
     conn.close()
 
@@ -312,28 +291,21 @@ def clear_backtests(user_id):
     conn.close()
 
 # ========== EXCEL ==========
-def export_to_excel(df, user_id, mode):
+def export_real_to_excel(df, user_id):
     if df.empty:
         return None
     df_exp = df.copy()
-    if mode == "real":
-        cols = ['trade_date', 'asset', 'direction', 'entry_price', 'exit_price', 'volume', 'pnl', 'result', 'comment', 'links']
-        names = ['📅 Дата', '🪙 Актив', '📈 Направление', '💰 Вход', '💰 Выход', '📊 Объём', '💵 P&L', '🎯 Исход', '📝 Комментарий', '🔗 Ссылки']
-        pnl_col = 7
-    else:
-        cols = ['period_start', 'period_end', 'timeframe', 'asset', 'direction', 'entry_price', 'exit_price', 'pnl_usd', 'pnl_r', 'signal_quality', 'setup', 'trigger']
-        names = ['📅 Начало', '📅 Конец', '⏱ Таймфрейм', '🪙 Актив', '📈 Направление', '💰 Вход', '💰 Выход', '💵 P&L', '📊 P&L (R)', '⭐ Качество', '🎯 Сетап', '⚡ Триггер']
-        pnl_col = 8
-    df_exp = df_exp[cols]
-    df_exp.columns = names
+    df_exp = df_exp[[
+        'trade_date', 'asset', 'direction', 'entry_price', 'exit_price', 'volume', 'pnl', 'result', 'comment', 'links'
+    ]]
+    df_exp.columns = ['📅 Дата', '🪙 Актив', '📈 Направление', '💰 Вход', '💰 Выход', '📊 Объём', '💵 P&L', '🎯 Исход', '📝 Комментарий', '🔗 Ссылки']
     df_exp['📈 Направление'] = df_exp['📈 Направление'].replace({'LONG': '🟢 LONG', 'SHORT': '🔴 SHORT'})
-    if mode == "real":
-        df_exp['🎯 Исход'] = df_exp['🎯 Исход'].replace({'TAKE': '✅ Тейк', 'STOP': '❌ Стоп'})
-    df_exp = df_exp.sort_values(df_exp.columns[0], ascending=False)
-    fname = f"{mode}_{user_id}.xlsx"
+    df_exp['🎯 Исход'] = df_exp['🎯 Исход'].replace({'TAKE': '✅ Тейк', 'STOP': '❌ Стоп'})
+    df_exp = df_exp.sort_values('📅 Дата', ascending=False)
+    fname = f"real_{user_id}.xlsx"
     with pd.ExcelWriter(fname, engine='openpyxl') as w:
-        df_exp.to_excel(w, sheet_name='Trades', index=False)
-        ws = w.sheets['Trades']
+        df_exp.to_excel(w, sheet_name='Реальная торговля', index=False)
+        ws = w.sheets['Реальная торговля']
         header_font = Font(bold=True, color="FFFFFF", size=11)
         header_fill = PatternFill(start_color="2b6cb0", end_color="2b6cb0", fill_type="solid")
         for col in range(1, len(df_exp.columns)+1):
@@ -343,7 +315,50 @@ def export_to_excel(df, user_id, mode):
         green = PatternFill(start_color="c6f7d0", end_color="c6f7d0", fill_type="solid")
         red = PatternFill(start_color="fecaca", end_color="fecaca", fill_type="solid")
         for row in range(2, len(df_exp)+2):
-            val = ws.cell(row=row, column=pnl_col).value
+            val = ws.cell(row=row, column=7).value
+            if val and val > 0:
+                for c in range(1, len(df_exp.columns)+1):
+                    ws.cell(row=row, column=c).fill = green
+            elif val and val < 0:
+                for c in range(1, len(df_exp.columns)+1):
+                    ws.cell(row=row, column=c).fill = red
+        for col in range(1, len(df_exp.columns)+1):
+            max_len = 0
+            col_letter = get_column_letter(col)
+            for row in range(1, len(df_exp)+2):
+                v = ws.cell(row=row, column=col).value
+                if v:
+                    max_len = max(max_len, len(str(v)))
+            ws.column_dimensions[col_letter].width = min(max_len+2, 30)
+        ws.freeze_panes = 'A2'
+    return fname
+
+def export_backtest_to_excel(df, user_id):
+    if df.empty:
+        return None
+    df_exp = df.copy()
+    df_exp = df_exp[[
+        'period_start', 'period_end', 'timeframe', 'asset', 'direction',
+        'entry_price', 'exit_price', 'pnl_usd', 'pnl_r', 'signal_quality', 'setup', 'trigger'
+    ]]
+    df_exp.columns = ['📅 Начало', '📅 Конец', '⏱ Таймфрейм', '🪙 Актив', '📈 Направление',
+                      '💰 Вход', '💰 Выход', '💵 P&L', '📊 P&L (R)', '⭐ Качество', '🎯 Сетап', '⚡ Триггер']
+    df_exp['📈 Направление'] = df_exp['📈 Направление'].replace({'LONG': '🟢 LONG', 'SHORT': '🔴 SHORT'})
+    df_exp = df_exp.sort_values('📅 Начало', ascending=False)
+    fname = f"backtest_{user_id}.xlsx"
+    with pd.ExcelWriter(fname, engine='openpyxl') as w:
+        df_exp.to_excel(w, sheet_name='Бэктест', index=False)
+        ws = w.sheets['Бэктест']
+        header_font = Font(bold=True, color="FFFFFF", size=11)
+        header_fill = PatternFill(start_color="2b6cb0", end_color="2b6cb0", fill_type="solid")
+        for col in range(1, len(df_exp.columns)+1):
+            cell = ws.cell(row=1, column=col)
+            cell.font = header_font
+            cell.fill = header_fill
+        green = PatternFill(start_color="c6f7d0", end_color="c6f7d0", fill_type="solid")
+        red = PatternFill(start_color="fecaca", end_color="fecaca", fill_type="solid")
+        for row in range(2, len(df_exp)+2):
+            val = ws.cell(row=row, column=8).value
             if val and val > 0:
                 for c in range(1, len(df_exp.columns)+1):
                     ws.cell(row=row, column=c).fill = green
@@ -362,53 +377,56 @@ def export_to_excel(df, user_id, mode):
     return fname
 
 # ========== СТАТИСТИКА ==========
-def get_stats_text(df, lang, title_key="stats_header", mode="real"):
+def get_real_stats_text(df, lang, title_key="stats_header"):
     if df.empty:
         return get_text(lang, "no_data")
     total = len(df)
-    if mode == "real":
-        wins = len(df[df['pnl'] > 0])
-        losses = len(df[df['pnl'] < 0])
-        wr = wins/total*100 if total else 0
-        longs = len(df[df['direction'] == 'LONG'])
-        shorts = len(df[df['direction'] == 'SHORT'])
-        total_pnl = df['pnl'].sum()
-        avg_pnl = df['pnl'].mean()
-        best = df['pnl'].max()
-        worst = df['pnl'].min()
-        sum_profit = df[df['pnl']>0]['pnl'].sum()
-        sum_loss = abs(df[df['pnl']<0]['pnl'].sum())
-        pf = sum_profit/sum_loss if sum_loss else sum_profit
-        return (
-            f"{get_text(lang, title_key)}\n\n"
-            f"{get_text(lang, 'total_trades', total=total)}\n"
-            f"{get_text(lang, 'wins', wins=wins)}\n"
-            f"{get_text(lang, 'losses', losses=losses)}\n"
-            f"{get_text(lang, 'winrate', wr=wr)}\n"
-            f"{get_text(lang, 'longs_shorts', longs=longs, shorts=shorts)}\n"
-            f"{get_text(lang, 'total_pnl', total_pnl=total_pnl)}\n"
-            f"{get_text(lang, 'avg_pnl', avg_pnl=avg_pnl)}\n"
-            f"{get_text(lang, 'best', best=best)}\n"
-            f"{get_text(lang, 'worst', worst=worst)}\n"
-            f"{get_text(lang, 'pf', pf=pf)}"
-        )
-    else:
-        wins = len(df[df['pnl_usd'] > 0])
-        losses = len(df[df['pnl_usd'] < 0])
-        wr = wins/total*100 if total else 0
-        avg_r = df['pnl_r'].mean()
-        total_r = df['pnl_r'].sum()
-        avg_q = df['signal_quality'].mean()
-        return (
-            f"{get_text(lang, 'bt_stats_header')}\n\n"
-            f"{get_text(lang, 'bt_total_trades', total=total)}\n"
-            f"{get_text(lang, 'bt_wins', wins=wins)}\n"
-            f"{get_text(lang, 'bt_losses', losses=losses)}\n"
-            f"{get_text(lang, 'bt_winrate', wr=wr)}\n"
-            f"{get_text(lang, 'bt_avg_r', avg_r=avg_r)}\n"
-            f"{get_text(lang, 'bt_total_r', total_r=total_r)}\n"
-            f"{get_text(lang, 'bt_quality', q=avg_q)}"
-        )
+    wins = len(df[df['pnl'] > 0])
+    losses = len(df[df['pnl'] < 0])
+    wr = wins/total*100 if total else 0
+    longs = len(df[df['direction'] == 'LONG'])
+    shorts = len(df[df['direction'] == 'SHORT'])
+    total_pnl = df['pnl'].sum()
+    avg_pnl = df['pnl'].mean()
+    best = df['pnl'].max()
+    worst = df['pnl'].min()
+    sum_profit = df[df['pnl']>0]['pnl'].sum()
+    sum_loss = abs(df[df['pnl']<0]['pnl'].sum())
+    pf = sum_profit/sum_loss if sum_loss else sum_profit
+    return (
+        f"{get_text(lang, title_key)}\n\n"
+        f"{get_text(lang, 'total_trades', total=total)}\n"
+        f"{get_text(lang, 'wins', wins=wins)}\n"
+        f"{get_text(lang, 'losses', losses=losses)}\n"
+        f"{get_text(lang, 'winrate', wr=wr)}\n"
+        f"{get_text(lang, 'longs_shorts', longs=longs, shorts=shorts)}\n"
+        f"{get_text(lang, 'total_pnl', total_pnl=total_pnl)}\n"
+        f"{get_text(lang, 'avg_pnl', avg_pnl=avg_pnl)}\n"
+        f"{get_text(lang, 'best', best=best)}\n"
+        f"{get_text(lang, 'worst', worst=worst)}\n"
+        f"{get_text(lang, 'pf', pf=pf)}"
+    )
+
+def get_backtest_stats_text(df, lang):
+    if df.empty:
+        return get_text(lang, "no_data")
+    total = len(df)
+    wins = len(df[df['pnl_usd'] > 0])
+    losses = len(df[df['pnl_usd'] < 0])
+    wr = wins/total*100 if total else 0
+    avg_r = df['pnl_r'].mean()
+    total_r = df['pnl_r'].sum()
+    avg_q = df['signal_quality'].mean()
+    return (
+        f"{get_text(lang, 'bt_stats_header')}\n\n"
+        f"{get_text(lang, 'bt_total_trades', total=total)}\n"
+        f"{get_text(lang, 'bt_wins', wins=wins)}\n"
+        f"{get_text(lang, 'bt_losses', losses=losses)}\n"
+        f"{get_text(lang, 'bt_winrate', wr=wr)}\n"
+        f"{get_text(lang, 'bt_avg_r', avg_r=avg_r)}\n"
+        f"{get_text(lang, 'bt_total_r', total_r=total_r)}\n"
+        f"{get_text(lang, 'bt_quality', q=avg_q)}"
+    )
 
 # ========== КЛАВИАТУРЫ ==========
 def mode_kb(lang):
@@ -520,16 +538,6 @@ class BacktestForm(StatesGroup):
 router = Router()
 bot = None
 
-async def is_subscribed(user_id):
-    ch = get_required_channel()
-    if ch == "@ваш_канал":
-        return True
-    try:
-        m = await bot.get_chat_member(ch, user_id)
-        return m.status in ['member','administrator','creator']
-    except:
-        return False
-
 # ========== СТАРТ ==========
 @router.message(CommandStart())
 async def start_cmd(msg: Message, state: FSMContext):
@@ -538,10 +546,6 @@ async def start_cmd(msg: Message, state: FSMContext):
     lang = get_user_lang(uid)
     if not lang:
         await msg.answer(get_text("ru", "select_language"), reply_markup=lang_kb())
-        return
-    if not await is_subscribed(uid):
-        ch = get_required_channel()
-        await msg.answer(get_text(lang, "subscribe_required", channel=ch), parse_mode="Markdown")
         return
     await msg.answer(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_kb(lang))
 
@@ -914,10 +918,10 @@ async def stats_all(call: CallbackQuery, state: FSMContext):
     mode = data.get('mode', 'real')
     if mode == "real":
         df = get_trades(uid, mode="real")
-        txt = get_stats_text(df, lang, "stats_header", "real")
+        txt = get_real_stats_text(df, lang, "stats_header")
     else:
         df = get_backtests(uid)
-        txt = get_stats_text(df, lang, "bt_stats_header", "backtest")
+        txt = get_backtest_stats_text(df, lang)
     await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=main_menu_kb(lang, mode))
     await call.answer()
 
@@ -927,7 +931,7 @@ async def stats_day(call: CallbackQuery, state: FSMContext):
     lang = get_user_lang(uid) or "ru"
     today = datetime.now().strftime("%Y-%m-%d")
     df = get_trades(uid, mode="real", start_date=today)
-    txt = get_stats_text(df, lang, "stats_today", "real")
+    txt = get_real_stats_text(df, lang, "stats_today")
     mode = "real"
     await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=main_menu_kb(lang, mode))
     await call.answer()
@@ -938,7 +942,7 @@ async def stats_week(call: CallbackQuery, state: FSMContext):
     lang = get_user_lang(uid) or "ru"
     week = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
     df = get_trades(uid, mode="real", start_date=week)
-    txt = get_stats_text(df, lang, "stats_week", "real")
+    txt = get_real_stats_text(df, lang, "stats_week")
     mode = "real"
     await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=main_menu_kb(lang, mode))
     await call.answer()
@@ -949,7 +953,7 @@ async def stats_month(call: CallbackQuery, state: FSMContext):
     lang = get_user_lang(uid) or "ru"
     month = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
     df = get_trades(uid, mode="real", start_date=month)
-    txt = get_stats_text(df, lang, "stats_month", "real")
+    txt = get_real_stats_text(df, lang, "stats_month")
     mode = "real"
     await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=main_menu_kb(lang, mode))
     await call.answer()
@@ -961,12 +965,16 @@ async def get_excel(call: CallbackQuery, state: FSMContext):
     mode = data.get('mode', 'real')
     if mode == "real":
         df = get_trades(uid, mode="real")
+        if df.empty:
+            await call.answer(get_text(get_user_lang(uid) or "ru", "no_data"), show_alert=True)
+            return
+        fname = export_real_to_excel(df, uid)
     else:
         df = get_backtests(uid)
-    if df.empty:
-        await call.answer("Нет данных", show_alert=True)
-        return
-    fname = export_to_excel(df, uid, mode)
+        if df.empty:
+            await call.answer(get_text(get_user_lang(uid) or "ru", "no_data"), show_alert=True)
+            return
+        fname = export_backtest_to_excel(df, uid)
     await call.message.answer_document(FSInputFile(fname), caption="📊 Ваш отчёт")
     os.remove(fname)
     await call.answer()
@@ -990,22 +998,6 @@ async def clear_yes(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(get_text(lang, "cleared"), reply_markup=main_menu_kb(lang, mode))
     await call.answer()
 
-# ========== АДМИН ==========
-@router.message(Command("set_channel"))
-async def set_channel(msg: Message):
-    if msg.from_user.id != ADMIN_ID:
-        await msg.answer("⛔ Only admin")
-        return
-    parts = msg.text.split()
-    if len(parts) != 2:
-        await msg.answer("Usage: /set_channel @channel")
-        return
-    ch = parts[1]
-    if not ch.startswith('@'):
-        ch = '@' + ch
-    set_required_channel(ch)
-    await msg.answer(f"✅ Channel set to {ch}")
-
 # ========== ЗАПУСК ==========
 async def main():
     global bot
@@ -1013,11 +1005,16 @@ async def main():
     bot = Bot(token=BOT_TOKEN)
     await bot.set_my_commands([
         BotCommand(command="start", description="Start / Запуск"),
-        BotCommand(command="set_channel", description="Set channel (admin only)"),
+        BotCommand(command="stats", description="All statistics / Вся статистика"),
+        BotCommand(command="day", description="Today / Сегодня"),
+        BotCommand(command="week", description="Week / Неделя"),
+        BotCommand(command="month", description="Month / Месяц"),
+        BotCommand(command="get", description="Excel report / Excel отчёт"),
+        BotCommand(command="clear", description="Clear journal / Очистить журнал"),
     ])
     dp = Dispatcher()
     dp.include_router(router)
-    print("✅ Бот запущен!")
+    print("✅ Бот запущен! Режимы: реальная торговля и бэктест, Excel отдельно для каждого.")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
