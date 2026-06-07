@@ -14,8 +14,8 @@ from openpyxl.utils import get_column_letter
 
 # ========== КОНФИГ ==========
 BOT_TOKEN = "8584035526:AAG8Q15ym8TONEAOH4_8_eQaXnsV4VhhIYs"
-ADMIN_ID = 7643347668           # ⚠️ ВСТАВЬ СВОЙ TELEGRAM ID
-REQUIRED_CHANNEL = "@ShadowFXTrader" # ⚠️ ВСТАВЬ СВОЙ КАНАЛ (с @)
+ADMIN_ID = 7643347668
+REQUIRED_CHANNEL = "@ShadowFXTrader"
 
 DB_NAME = "trades.db"
 BT_DB_NAME = "backtests.db"
@@ -24,34 +24,23 @@ BT_DB_NAME = "backtests.db"
 TEXTS = {
     "ru": {
         "subscribe_required": "📢 **Подпишитесь на наш канал, чтобы пользоваться ботом!**\n\n👉 {channel}\n\nПосле подписки нажмите /start снова.",
-        "select_mode": "🎛 **Выберите режим работы:**\n\n• 📊 Реальная торговля – запись реальных сделок\n• 🔄 Бэктест – тестирование стратегий",
+        "select_mode": "🎛 **Выберите режим работы:**",
         "mode_real": "📊 Реальная торговля",
         "mode_backtest": "🔄 Бэктест",
-        "add_trade": "➕ Добавить сделку",
-        "stats": "📊 Статистика",
-        "excel": "📎 Excel-отчёт",
-        "clear": "🗑 Очистить журнал",
+        "add_trade": "➕ Сделка",
+        "stats_all": "📈 Вся статистика",
+        "stats_day": "📆 День",
+        "stats_week": "📅 Неделя",
+        "stats_month": "📊 Месяц",
+        "excel": "📎 Excel",
+        "clear": "🗑 Очистить",
         "settings": "⚙️ Настройки",
         "back": "🔙 Назад",
+        "yes": "✅ Да",
+        "no": "❌ Нет",
         "confirm_clear": "⚠️ ДА, УДАЛИТЬ ВСЁ",
-        "no": "🔙 Нет, назад",
-        "no_data": "📭 Нет данных.",
-        "empty_add": "📭 Нет данных. Добавьте первую сделку.",
-        "no_trades_today": "📭 Нет сделок за сегодня.",
-        "no_trades_week": "📭 Нет сделок за последнюю неделю.",
-        "no_trades_month": "📭 Нет сделок за последний месяц.",
-        "excel_ready": "📊 Ваш журнал",
         "cleared": "🗑 Журнал очищен.",
-        "not_admin": "⛔ Только создатель бота может это делать.",
-        "set_channel_usage": "Используй: /set_channel @username",
-        "channel_updated": "✅ Канал изменён на {channel}",
-        "select_language": "🌐 Выберите язык / Choose language:",
-        "language_set": "✅ Язык установлен: русский",
-        "language_set_en": "✅ Language set: English",
-        "support_info": "📞 **Поддержка**\n\nПо вопросам пишите: @ваш_username",
-        "settings_menu": "⚙️ **Настройки**\n\nВыберите действие:",
-        "change_lang": "🌐 Сменить язык",
-        "support": "📞 Поддержка",
+        "no_data": "📭 Нет данных.",
         "enter_asset": "📝 Введите тикер (BTC, ETH, TON, AAPL):",
         "choose_direction": "📈 Выберите направление:",
         "long": "🟢 LONG",
@@ -62,10 +51,11 @@ TEXTS = {
         "choose_result": "🎯 Как закрылась сделка?",
         "take": "✅ Тейк",
         "stop": "❌ Стоп",
-        "add_link_question": "🔗 Хотите добавить ссылку на график? (да/нет)",
+        "enter_comment": "📝 Введите комментарий (отправьте '-' чтобы пропустить):",
+        "add_link_question": "🔗 Хотите добавить ссылку на график?",
         "enter_link": "Отправьте ссылку:",
-        "enter_timeframe": "Какой это таймфрейм? (например: 15м, 1ч, 4ч, 1д, 1н, 1м)",
-        "link_saved": "✅ Ссылка сохранена! Добавить ещё? (да/нет)",
+        "enter_timeframe": "Какой это таймфрейм? (15м, 1ч, 4ч, 1д, 1н, 1м)",
+        "link_saved": "✅ Ссылка сохранена! Добавить ещё?",
         "enter_date": "📅 Введите дату (ДД.ММ.ГГГГ) или 'сегодня':",
         "trade_saved": "✅ Сделка сохранена!",
         "bt_period_start": "📅 Введите НАЧАЛО периода (ДД.ММ.ГГГГ):",
@@ -73,14 +63,24 @@ TEXTS = {
         "bt_timeframe": "⏱ Введите таймфрейм (M5, H1, H4, D1, W1):",
         "bt_commission": "💸 Комиссия в % (0.1):",
         "bt_spread": "📊 Спред в пунктах (1.5):",
+        "enter_sl": "🛑 Введите цену Stop-Loss:",
+        "enter_tp": "🎯 Введите цену Take-Profit (0 если нет):",
+        "enter_exit_price_bt": "💰 Введите цену выхода:",
+        "enter_entry_time": "⏰ Время входа (ЧЧ:ММ):",
+        "enter_exit_time": "⏰ Время выхода (ЧЧ:ММ):",
+        "enter_setup": "🎯 Название сетапа (стратегии):",
+        "enter_trigger": "⚡ Триггер (сигнал):",
+        "enter_quality": "⭐ Оцените качество сигнала (1-5):",
+        "enter_link_bt": "🔗 Ссылка на скриншот (0 если нет):",
         "error_number": "❌ Ошибка! Введите число.",
         "error_date": "❌ Ошибка! Введите дату в формате ДД.ММ.ГГГГ.",
-        "yes": "✅ Да",
-        "no_thanks": "❌ Нет",
-        "stats_all_time": "📊 Статистика за всё время",
-        "stats_today": "📆 Статистика за сегодня",
-        "stats_week": "📅 Статистика за неделю",
-        "stats_month": "📊 Статистика за месяц",
+        "select_language": "🌐 Выберите язык / Choose language:",
+        "language_set": "✅ Язык установлен: русский",
+        "language_set_en": "✅ Language set: English",
+        "support_info": "📞 **Поддержка**\n\nПо вопросам пишите: @ваш_username",
+        "change_lang": "🌐 Сменить язык",
+        "support": "📞 Поддержка",
+        "settings_menu": "⚙️ **Настройки**",
         "stats_header": "📊 Ваша статистика",
         "total_trades": "📋 Всего сделок: {total}",
         "wins": "✅ Прибыльных: {wins}",
@@ -103,34 +103,23 @@ TEXTS = {
     },
     "en": {
         "subscribe_required": "📢 **Subscribe to our channel to use the bot!**\n\n👉 {channel}\n\nAfter subscribing, press /start again.",
-        "select_mode": "🎛 **Select mode:**\n\n• 📊 Real trading – record real trades\n• 🔄 Backtest – test strategies",
-        "mode_real": "📊 Real trading",
+        "select_mode": "🎛 **Select mode:**",
+        "mode_real": "📊 Real Trading",
         "mode_backtest": "🔄 Backtest",
-        "add_trade": "➕ Add trade",
-        "stats": "📊 Statistics",
-        "excel": "📎 Excel report",
-        "clear": "🗑 Clear journal",
+        "add_trade": "➕ Trade",
+        "stats_all": "📈 All Stats",
+        "stats_day": "📆 Day",
+        "stats_week": "📅 Week",
+        "stats_month": "📊 Month",
+        "excel": "📎 Excel",
+        "clear": "🗑 Clear",
         "settings": "⚙️ Settings",
         "back": "🔙 Back",
-        "confirm_clear": "⚠️ YES, DELETE EVERYTHING",
-        "no": "🔙 No, go back",
-        "no_data": "📭 No data.",
-        "empty_add": "📭 No data. Add your first trade.",
-        "no_trades_today": "📭 No trades today.",
-        "no_trades_week": "📭 No trades in the last week.",
-        "no_trades_month": "📭 No trades in the last month.",
-        "excel_ready": "📊 Your journal",
+        "yes": "✅ Yes",
+        "no": "❌ No",
+        "confirm_clear": "⚠️ YES, DELETE ALL",
         "cleared": "🗑 Journal cleared.",
-        "not_admin": "⛔ Only bot creator can do this.",
-        "set_channel_usage": "Usage: /set_channel @username",
-        "channel_updated": "✅ Channel changed to {channel}",
-        "select_language": "🌐 Choose language:",
-        "language_set": "✅ Language set: Russian",
-        "language_set_en": "✅ Language set: English",
-        "support_info": "📞 **Support**\n\nContact: @your_username",
-        "settings_menu": "⚙️ **Settings**\n\nChoose action:",
-        "change_lang": "🌐 Change language",
-        "support": "📞 Support",
+        "no_data": "📭 No data.",
         "enter_asset": "📝 Enter ticker (BTC, ETH, TON, AAPL):",
         "choose_direction": "📈 Choose direction:",
         "long": "🟢 LONG",
@@ -141,10 +130,11 @@ TEXTS = {
         "choose_result": "🎯 How did the trade close?",
         "take": "✅ Take",
         "stop": "❌ Stop",
-        "add_link_question": "🔗 Add chart link? (yes/no)",
+        "enter_comment": "📝 Enter comment (send '-' to skip):",
+        "add_link_question": "🔗 Add chart link?",
         "enter_link": "Send the link:",
-        "enter_timeframe": "What timeframe? (e.g., 15m, 1h, 4h, 1d, 1w, 1M)",
-        "link_saved": "✅ Link saved! Add another? (yes/no)",
+        "enter_timeframe": "What timeframe? (15m, 1h, 4h, 1d, 1w, 1M)",
+        "link_saved": "✅ Link saved! Add another?",
         "enter_date": "📅 Enter date (DD.MM.YYYY) or 'today':",
         "trade_saved": "✅ Trade saved!",
         "bt_period_start": "📅 Enter START date (DD.MM.YYYY):",
@@ -152,14 +142,24 @@ TEXTS = {
         "bt_timeframe": "⏱ Enter timeframe (M5, H1, H4, D1, W1):",
         "bt_commission": "💸 Commission % (0.1):",
         "bt_spread": "📊 Spread in points (1.5):",
+        "enter_sl": "🛑 Enter Stop-Loss price:",
+        "enter_tp": "🎯 Enter Take-Profit price (0 if none):",
+        "enter_exit_price_bt": "💰 Enter exit price:",
+        "enter_entry_time": "⏰ Entry time (HH:MM):",
+        "enter_exit_time": "⏰ Exit time (HH:MM):",
+        "enter_setup": "🎯 Setup name (strategy):",
+        "enter_trigger": "⚡ Trigger (signal):",
+        "enter_quality": "⭐ Rate signal quality (1-5):",
+        "enter_link_bt": "🔗 Screenshot link (0 if none):",
         "error_number": "❌ Error! Enter a number.",
         "error_date": "❌ Error! Enter date in DD.MM.YYYY format.",
-        "yes": "✅ Yes",
-        "no_thanks": "❌ No",
-        "stats_all_time": "📊 Statistics for all time",
-        "stats_today": "📆 Today's statistics",
-        "stats_week": "📅 Weekly statistics",
-        "stats_month": "📊 Monthly statistics",
+        "select_language": "🌐 Choose language:",
+        "language_set": "✅ Language set: Russian",
+        "language_set_en": "✅ Language set: English",
+        "support_info": "📞 **Support**\n\nContact: @your_username",
+        "change_lang": "🌐 Change language",
+        "support": "📞 Support",
+        "settings_menu": "⚙️ **Settings**",
         "stats_header": "📊 Your statistics",
         "total_trades": "📋 Total trades: {total}",
         "wins": "✅ Winning: {wins}",
@@ -190,7 +190,6 @@ def get_text(lang, key, **kwargs):
 
 # ========== БАЗЫ ДАННЫХ ==========
 def init_dbs():
-    # реальные сделки
     conn = sqlite3.connect(DB_NAME)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS trades (
@@ -200,7 +199,7 @@ def init_dbs():
             result TEXT, comment TEXT, trade_date TEXT, links TEXT
         )
     """)
-    # бэктест
+    conn.close()
     conn = sqlite3.connect(BT_DB_NAME)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS backtests (
@@ -212,9 +211,7 @@ def init_dbs():
             setup TEXT, trigger TEXT, link_chart TEXT, entry_time TEXT, exit_time TEXT
         )
     """)
-    conn.commit()
     conn.close()
-    # общая таблица пользователей
     conn = sqlite3.connect(DB_NAME)
     conn.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, lang TEXT DEFAULT 'ru')")
     conn.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
@@ -421,48 +418,43 @@ def mode_kb(lang):
         [InlineKeyboardButton(text=get_text(lang, "settings"), callback_data="settings_menu")]
     ])
 
-def main_menu(lang, mode):
+def main_menu_kb(lang, mode):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=get_text(lang, "add_trade"), callback_data="add_trade")],
-        [InlineKeyboardButton(text=get_text(lang, "stats"), callback_data="stats_menu")],
-        [InlineKeyboardButton(text=get_text(lang, "excel"), callback_data="get_excel")],
-        [InlineKeyboardButton(text=get_text(lang, "clear"), callback_data="clear_confirm")],
+        [InlineKeyboardButton(text=get_text(lang, "stats_all"), callback_data="stats_all"),
+         InlineKeyboardButton(text=get_text(lang, "stats_day"), callback_data="stats_day"),
+         InlineKeyboardButton(text=get_text(lang, "stats_week"), callback_data="stats_week"),
+         InlineKeyboardButton(text=get_text(lang, "stats_month"), callback_data="stats_month")],
+        [InlineKeyboardButton(text=get_text(lang, "excel"), callback_data="get_excel"),
+         InlineKeyboardButton(text=get_text(lang, "clear"), callback_data="clear_confirm"),
+         InlineKeyboardButton(text=get_text(lang, "settings"), callback_data="settings_menu")],
         [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
-    ])
-
-def stats_kb(lang):
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "stats_all_time"), callback_data="stats_all")],
-        [InlineKeyboardButton(text=get_text(lang, "stats_day"), callback_data="stats_day")],
-        [InlineKeyboardButton(text=get_text(lang, "stats_week"), callback_data="stats_week")],
-        [InlineKeyboardButton(text=get_text(lang, "stats_month"), callback_data="stats_month")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_main")]
     ])
 
 def direction_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=get_text(lang, "long"), callback_data="LONG"),
          InlineKeyboardButton(text=get_text(lang, "short"), callback_data="SHORT")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_main")]
+        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
     ])
 
 def result_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=get_text(lang, "take"), callback_data="TAKE"),
          InlineKeyboardButton(text=get_text(lang, "stop"), callback_data="STOP")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_main")]
+        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
     ])
 
 def yesno_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=get_text(lang, "yes"), callback_data="yes"),
-         InlineKeyboardButton(text=get_text(lang, "no_thanks"), callback_data="no")]
+         InlineKeyboardButton(text=get_text(lang, "no"), callback_data="no")]
     ])
 
 def confirm_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=get_text(lang, "confirm_clear"), callback_data="clear_yes")],
-        [InlineKeyboardButton(text=get_text(lang, "no"), callback_data="back_main")]
+        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
     ])
 
 def settings_kb(lang):
@@ -478,9 +470,20 @@ def lang_kb():
         [InlineKeyboardButton(text="🇬🇧 English", callback_data="lang_en")]
     ])
 
+def quality_kb():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="1", callback_data="q_1"), InlineKeyboardButton(text="2", callback_data="q_2"),
+         InlineKeyboardButton(text="3", callback_data="q_3"), InlineKeyboardButton(text="4", callback_data="q_4"),
+         InlineKeyboardButton(text="5", callback_data="q_5")]
+    ])
+
+def back_kb(lang):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
+    ])
+
 # ========== FSM ==========
 class TradeForm(StatesGroup):
-    mode = State()
     asset = State()
     direction = State()
     entry_price = State()
@@ -517,7 +520,6 @@ class BacktestForm(StatesGroup):
 router = Router()
 bot = None
 
-# ========== ПРОВЕРКА ПОДПИСКИ ==========
 async def is_subscribed(user_id):
     ch = get_required_channel()
     if ch == "@ваш_канал":
@@ -544,11 +546,11 @@ async def start_cmd(msg: Message, state: FSMContext):
     await msg.answer(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_kb(lang))
 
 @router.callback_query(F.data.startswith("lang_"))
-async def set_lang(call: CallbackQuery):
+async def set_lang(call: CallbackQuery, state: FSMContext):
     lang = call.data.split("_")[1]
     set_user_lang(call.from_user.id, lang)
     await call.message.delete()
-    await start_cmd(call.message, call.state)
+    await start_cmd(call.message, state)
     await call.answer()
 
 @router.callback_query(F.data == "back_mode")
@@ -582,11 +584,12 @@ async def choose_mode(call: CallbackQuery, state: FSMContext):
     mode = call.data.split("_")[1]
     await state.update_data(mode=mode)
     lang = get_user_lang(call.from_user.id) or "ru"
-    await state.set_state(TradeForm.asset if mode == "real" else BacktestForm.period_start)
-    await call.message.edit_text(
-        get_text(lang, "enter_asset") if mode == "real" else get_text(lang, "bt_period_start"),
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]])
-    )
+    if mode == "real":
+        await state.set_state(TradeForm.asset)
+        await call.message.edit_text(get_text(lang, "enter_asset"), reply_markup=back_kb(lang))
+    else:
+        await state.set_state(BacktestForm.period_start)
+        await call.message.edit_text(get_text(lang, "bt_period_start"), reply_markup=back_kb(lang))
     await call.answer()
 
 # ========== РЕАЛЬНАЯ ТОРГОВЛЯ ==========
@@ -602,7 +605,7 @@ async def real_dir(call: CallbackQuery, state: FSMContext):
     await state.update_data(direction=call.data)
     await state.set_state(TradeForm.entry_price)
     lang = get_user_lang(call.from_user.id) or "ru"
-    await call.message.edit_text(get_text(lang, "enter_entry_price"), reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang,"back"), callback_data="back_main")]]))
+    await call.message.edit_text(get_text(lang, "enter_entry_price"), reply_markup=back_kb(lang))
     await call.answer()
 
 @router.message(TradeForm.entry_price)
@@ -611,7 +614,7 @@ async def real_entry(msg: Message, state: FSMContext):
         await state.update_data(entry_price=float(msg.text.replace(",",".")))
         await state.set_state(TradeForm.exit_price)
         lang = get_user_lang(msg.from_user.id) or "ru"
-        await msg.answer(get_text(lang, "enter_exit_price"), reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang,"back"), callback_data="back_main")]]))
+        await msg.answer(get_text(lang, "enter_exit_price"), reply_markup=back_kb(lang))
     except:
         lang = get_user_lang(msg.from_user.id) or "ru"
         await msg.answer(get_text(lang, "error_number"))
@@ -622,7 +625,7 @@ async def real_exit(msg: Message, state: FSMContext):
         await state.update_data(exit_price=float(msg.text.replace(",",".")))
         await state.set_state(TradeForm.volume)
         lang = get_user_lang(msg.from_user.id) or "ru"
-        await msg.answer(get_text(lang, "enter_volume"), reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang,"back"), callback_data="back_main")]]))
+        await msg.answer(get_text(lang, "enter_volume"), reply_markup=back_kb(lang))
     except:
         lang = get_user_lang(msg.from_user.id) or "ru"
         await msg.answer(get_text(lang, "error_number"))
@@ -643,7 +646,7 @@ async def real_res(call: CallbackQuery, state: FSMContext):
     await state.update_data(result=call.data)
     await state.set_state(TradeForm.comment)
     lang = get_user_lang(call.from_user.id) or "ru"
-    await call.message.edit_text(get_text(lang, "enter_comment") + "\n(отправьте '-' чтобы пропустить)", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang,"back"), callback_data="back_main")]]))
+    await call.message.edit_text(get_text(lang, "enter_comment"), reply_markup=back_kb(lang))
     await call.answer()
 
 @router.message(TradeForm.comment)
@@ -660,7 +663,7 @@ async def real_comment(msg: Message, state: FSMContext):
 async def add_link_start(call: CallbackQuery, state: FSMContext):
     await state.set_state(TradeForm.link_url)
     lang = get_user_lang(call.from_user.id) or "ru"
-    await call.message.edit_text(get_text(lang, "enter_link"), reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang,"back"), callback_data="back_main")]]))
+    await call.message.edit_text(get_text(lang, "enter_link"), reply_markup=back_kb(lang))
     await call.answer()
 
 @router.callback_query(F.data == "no")
@@ -668,7 +671,7 @@ async def skip_links(call: CallbackQuery, state: FSMContext):
     await state.update_data(links="")
     await state.set_state(TradeForm.trade_date)
     lang = get_user_lang(call.from_user.id) or "ru"
-    await call.message.edit_text(get_text(lang, "enter_date"), reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang,"back"), callback_data="back_main")]]))
+    await call.message.edit_text(get_text(lang, "enter_date"), reply_markup=back_kb(lang))
     await call.answer()
 
 @router.message(TradeForm.link_url)
@@ -677,7 +680,7 @@ async def get_link(msg: Message, state: FSMContext):
     await state.update_data(link_url=url)
     await state.set_state(TradeForm.link_tf)
     lang = get_user_lang(msg.from_user.id) or "ru"
-    await msg.answer(get_text(lang, "enter_timeframe"), reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang,"back"), callback_data="back_main")]]))
+    await msg.answer(get_text(lang, "enter_timeframe"), reply_markup=back_kb(lang))
 
 @router.message(TradeForm.link_tf)
 async def get_tf(msg: Message, state: FSMContext):
@@ -719,7 +722,8 @@ async def real_date(msg: Message, state: FSMContext):
                data['result'], data['comment'], tdate, data.get('links', ''))
     await state.clear()
     mode = data.get('mode', 'real')
-    await msg.answer(get_text(lang, "trade_saved"), reply_markup=main_menu(lang, mode))
+    lang = get_user_lang(msg.from_user.id) or "ru"
+    await msg.answer(get_text(lang, "trade_saved"), reply_markup=main_menu_kb(lang, mode))
 
 # ========== БЭКТЕСТ ==========
 @router.message(BacktestForm.period_start)
@@ -729,7 +733,7 @@ async def bt_start(msg: Message, state: FSMContext):
         d = datetime.strptime(msg.text.strip(), "%d.%m.%Y").strftime("%Y-%m-%d")
         await state.update_data(period_start=d)
         await state.set_state(BacktestForm.period_end)
-        await msg.answer(get_text(lang, "bt_period_end"), reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang,"back"), callback_data="back_mode")]]))
+        await msg.answer(get_text(lang, "bt_period_end"), reply_markup=back_kb(lang))
     except:
         await msg.answer(get_text(lang, "error_date"))
 
@@ -740,7 +744,7 @@ async def bt_end(msg: Message, state: FSMContext):
         d = datetime.strptime(msg.text.strip(), "%d.%m.%Y").strftime("%Y-%m-%d")
         await state.update_data(period_end=d)
         await state.set_state(BacktestForm.timeframe)
-        await msg.answer(get_text(lang, "bt_timeframe"))
+        await msg.answer(get_text(lang, "bt_timeframe"), reply_markup=back_kb(lang))
     except:
         await msg.answer(get_text(lang, "error_date"))
 
@@ -749,7 +753,7 @@ async def bt_tf(msg: Message, state: FSMContext):
     await state.update_data(timeframe=msg.text.upper())
     await state.set_state(BacktestForm.commission)
     lang = get_user_lang(msg.from_user.id) or "ru"
-    await msg.answer(get_text(lang, "bt_commission"))
+    await msg.answer(get_text(lang, "bt_commission"), reply_markup=back_kb(lang))
 
 @router.message(BacktestForm.commission)
 async def bt_comm(msg: Message, state: FSMContext):
@@ -757,7 +761,7 @@ async def bt_comm(msg: Message, state: FSMContext):
         await state.update_data(commission=float(msg.text.replace(",",".")))
         await state.set_state(BacktestForm.spread)
         lang = get_user_lang(msg.from_user.id) or "ru"
-        await msg.answer(get_text(lang, "bt_spread"))
+        await msg.answer(get_text(lang, "bt_spread"), reply_markup=back_kb(lang))
     except:
         lang = get_user_lang(msg.from_user.id) or "ru"
         await msg.answer(get_text(lang, "error_number"))
@@ -768,7 +772,7 @@ async def bt_spread(msg: Message, state: FSMContext):
         await state.update_data(spread=float(msg.text.replace(",",".")))
         await state.set_state(BacktestForm.asset)
         lang = get_user_lang(msg.from_user.id) or "ru"
-        await msg.answer(get_text(lang, "enter_asset"))
+        await msg.answer(get_text(lang, "enter_asset"), reply_markup=back_kb(lang))
     except:
         lang = get_user_lang(msg.from_user.id) or "ru"
         await msg.answer(get_text(lang, "error_number"))
@@ -785,7 +789,7 @@ async def bt_dir(call: CallbackQuery, state: FSMContext):
     await state.update_data(direction=call.data)
     await state.set_state(BacktestForm.entry_price)
     lang = get_user_lang(call.from_user.id) or "ru"
-    await call.message.edit_text(get_text(lang, "enter_entry_price"), reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang,"back"), callback_data="back_mode")]]))
+    await call.message.edit_text(get_text(lang, "enter_entry_price"), reply_markup=back_kb(lang))
     await call.answer()
 
 @router.message(BacktestForm.entry_price)
@@ -794,7 +798,7 @@ async def bt_entry(msg: Message, state: FSMContext):
         await state.update_data(entry_price=float(msg.text.replace(",",".")))
         await state.set_state(BacktestForm.sl_price)
         lang = get_user_lang(msg.from_user.id) or "ru"
-        await msg.answer("🛑 Введите цену Stop-Loss:")
+        await msg.answer(get_text(lang, "enter_sl"), reply_markup=back_kb(lang))
     except:
         lang = get_user_lang(msg.from_user.id) or "ru"
         await msg.answer(get_text(lang, "error_number"))
@@ -804,18 +808,22 @@ async def bt_sl(msg: Message, state: FSMContext):
     try:
         await state.update_data(sl_price=float(msg.text.replace(",",".")))
         await state.set_state(BacktestForm.tp_price)
-        await msg.answer("🎯 Введите цену Take-Profit (0 если нет):")
+        lang = get_user_lang(msg.from_user.id) or "ru"
+        await msg.answer(get_text(lang, "enter_tp"), reply_markup=back_kb(lang))
     except:
-        await msg.answer("Ошибка!")
+        lang = get_user_lang(msg.from_user.id) or "ru"
+        await msg.answer(get_text(lang, "error_number"))
 
 @router.message(BacktestForm.tp_price)
 async def bt_tp(msg: Message, state: FSMContext):
     try:
         await state.update_data(tp_price=float(msg.text.replace(",",".")))
         await state.set_state(BacktestForm.exit_price)
-        await msg.answer("💰 Введите цену выхода:")
+        lang = get_user_lang(msg.from_user.id) or "ru"
+        await msg.answer(get_text(lang, "enter_exit_price_bt"), reply_markup=back_kb(lang))
     except:
-        await msg.answer("Ошибка!")
+        lang = get_user_lang(msg.from_user.id) or "ru"
+        await msg.answer(get_text(lang, "error_number"))
 
 @router.message(BacktestForm.exit_price)
 async def bt_exit(msg: Message, state: FSMContext):
@@ -835,34 +843,39 @@ async def bt_exit(msg: Message, state: FSMContext):
         r = pnl/risk if risk else 0
         await state.update_data(exit_price=exit_p, pnl_usd=pnl, pnl_r=r)
         await state.set_state(BacktestForm.entry_time)
-        await msg.answer(f"📊 P&L: ${pnl:.2f} ({r:.2f}R)\n\n⏰ Время входа (ЧЧ:ММ):")
+        lang = get_user_lang(msg.from_user.id) or "ru"
+        await msg.answer(f"📊 P&L: ${pnl:.2f} ({r:.2f}R)\n\n{get_text(lang, 'enter_entry_time')}", reply_markup=back_kb(lang))
     except:
-        await msg.answer("Ошибка!")
+        lang = get_user_lang(msg.from_user.id) or "ru"
+        await msg.answer(get_text(lang, "error_number"))
 
 @router.message(BacktestForm.entry_time)
 async def bt_etime(msg: Message, state: FSMContext):
     await state.update_data(entry_time=msg.text)
     await state.set_state(BacktestForm.exit_time)
-    await msg.answer("⏰ Время выхода (ЧЧ:ММ):")
+    lang = get_user_lang(msg.from_user.id) or "ru"
+    await msg.answer(get_text(lang, "enter_exit_time"), reply_markup=back_kb(lang))
 
 @router.message(BacktestForm.exit_time)
 async def bt_xtime(msg: Message, state: FSMContext):
     await state.update_data(exit_time=msg.text)
     await state.set_state(BacktestForm.setup)
-    await msg.answer("🎯 Название сетапа (стратегии):")
+    lang = get_user_lang(msg.from_user.id) or "ru"
+    await msg.answer(get_text(lang, "enter_setup"), reply_markup=back_kb(lang))
 
 @router.message(BacktestForm.setup)
 async def bt_setup(msg: Message, state: FSMContext):
     await state.update_data(setup=msg.text)
     await state.set_state(BacktestForm.trigger)
-    await msg.answer("⚡ Триггер (сигнал):")
+    lang = get_user_lang(msg.from_user.id) or "ru"
+    await msg.answer(get_text(lang, "enter_trigger"), reply_markup=back_kb(lang))
 
 @router.message(BacktestForm.trigger)
 async def bt_trigger(msg: Message, state: FSMContext):
     await state.update_data(trigger=msg.text)
     await state.set_state(BacktestForm.signal_quality)
-    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=str(i), callback_data=f"q_{i}") for i in range(1,6)]])
-    await msg.answer("⭐ Оцените качество сигнала (1-5):", reply_markup=kb)
+    lang = get_user_lang(msg.from_user.id) or "ru"
+    await msg.answer(get_text(lang, "enter_quality"), reply_markup=quality_kb())
 
 @router.callback_query(F.data.startswith("q_"))
 async def bt_quality(call: CallbackQuery, state: FSMContext):
@@ -870,7 +883,7 @@ async def bt_quality(call: CallbackQuery, state: FSMContext):
     await state.update_data(signal_quality=q)
     await state.set_state(BacktestForm.link_chart)
     lang = get_user_lang(call.from_user.id) or "ru"
-    await call.message.edit_text("🔗 Ссылка на скриншот (0 если нет):", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang,"back"), callback_data="back_mode")]]))
+    await call.message.edit_text(get_text(lang, "enter_link_bt"), reply_markup=back_kb(lang))
     await call.answer()
 
 @router.message(BacktestForm.link_chart)
@@ -890,101 +903,91 @@ async def bt_link(msg: Message, state: FSMContext):
     save_backtest(bt_data)
     await state.clear()
     lang = get_user_lang(msg.from_user.id) or "ru"
-    await msg.answer("✅ Бэктест сохранён!", reply_markup=main_menu(lang, "backtest"))
+    await msg.answer("✅ Бэктест сохранён!", reply_markup=main_menu_kb(lang, "backtest"))
 
-# ========== СТАТИСТИКА ==========
-@router.callback_query(F.data == "stats_menu")
-async def stats_menu(call: CallbackQuery, state: FSMContext):
-    await state.clear()
-    lang = get_user_lang(call.from_user.id) or "ru"
-    await call.message.edit_text(get_text(lang, "stats_menu"), reply_markup=stats_kb(lang))
-    await call.answer()
-
-@router.callback_query(F.data == "back_main")
-async def back_main(call: CallbackQuery, state: FSMContext):
-    await state.clear()
-    lang = get_user_lang(call.from_user.id) or "ru"
-    mode = (await state.get_data()).get('mode', 'real')
-    await call.message.edit_text(get_text(lang, "main_menu"), reply_markup=main_menu(lang, mode))
-    await call.answer()
-
+# ========== СТАТИСТИКА И ЭКСПОРТ ==========
 @router.callback_query(F.data == "stats_all")
-async def stats_all(call: CallbackQuery):
+async def stats_all(call: CallbackQuery, state: FSMContext):
     uid = call.from_user.id
     lang = get_user_lang(uid) or "ru"
-    mode = (await call.state.get_data()).get('mode', 'real')
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
     if mode == "real":
         df = get_trades(uid, mode="real")
-        txt = get_stats_text(df, lang, "stats_all_time", "real")
+        txt = get_stats_text(df, lang, "stats_header", "real")
     else:
         df = get_backtests(uid)
         txt = get_stats_text(df, lang, "bt_stats_header", "backtest")
-    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=stats_kb(lang))
+    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=main_menu_kb(lang, mode))
     await call.answer()
 
 @router.callback_query(F.data == "stats_day")
-async def stats_day(call: CallbackQuery):
+async def stats_day(call: CallbackQuery, state: FSMContext):
     uid = call.from_user.id
     lang = get_user_lang(uid) or "ru"
     today = datetime.now().strftime("%Y-%m-%d")
     df = get_trades(uid, mode="real", start_date=today)
     txt = get_stats_text(df, lang, "stats_today", "real")
-    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=stats_kb(lang))
+    mode = "real"
+    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=main_menu_kb(lang, mode))
     await call.answer()
 
 @router.callback_query(F.data == "stats_week")
-async def stats_week(call: CallbackQuery):
+async def stats_week(call: CallbackQuery, state: FSMContext):
     uid = call.from_user.id
     lang = get_user_lang(uid) or "ru"
     week = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
     df = get_trades(uid, mode="real", start_date=week)
     txt = get_stats_text(df, lang, "stats_week", "real")
-    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=stats_kb(lang))
+    mode = "real"
+    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=main_menu_kb(lang, mode))
     await call.answer()
 
 @router.callback_query(F.data == "stats_month")
-async def stats_month(call: CallbackQuery):
+async def stats_month(call: CallbackQuery, state: FSMContext):
     uid = call.from_user.id
     lang = get_user_lang(uid) or "ru"
     month = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
     df = get_trades(uid, mode="real", start_date=month)
     txt = get_stats_text(df, lang, "stats_month", "real")
-    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=stats_kb(lang))
+    mode = "real"
+    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=main_menu_kb(lang, mode))
     await call.answer()
 
 @router.callback_query(F.data == "get_excel")
-async def get_excel(call: CallbackQuery):
+async def get_excel(call: CallbackQuery, state: FSMContext):
     uid = call.from_user.id
-    mode = (await call.state.get_data()).get('mode', 'real')
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
     if mode == "real":
         df = get_trades(uid, mode="real")
-        fname = export_to_excel(df, uid, "real")
     else:
         df = get_backtests(uid)
-        fname = export_to_excel(df, uid, "backtest")
     if df.empty:
         await call.answer("Нет данных", show_alert=True)
         return
+    fname = export_to_excel(df, uid, mode)
     await call.message.answer_document(FSInputFile(fname), caption="📊 Ваш отчёт")
     os.remove(fname)
     await call.answer()
 
 @router.callback_query(F.data == "clear_confirm")
-async def clear_confirm(call: CallbackQuery):
+async def clear_confirm(call: CallbackQuery, state: FSMContext):
     lang = get_user_lang(call.from_user.id) or "ru"
     await call.message.edit_text("⚠️ Удалить все сделки?", reply_markup=confirm_kb(lang))
     await call.answer()
 
 @router.callback_query(F.data == "clear_yes")
-async def clear_yes(call: CallbackQuery):
+async def clear_yes(call: CallbackQuery, state: FSMContext):
     uid = call.from_user.id
-    mode = (await call.state.get_data()).get('mode', 'real')
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
     if mode == "real":
         clear_trades(uid, mode="real")
     else:
         clear_backtests(uid)
     lang = get_user_lang(uid) or "ru"
-    await call.message.edit_text(get_text(lang, "cleared"), reply_markup=main_menu(lang, mode))
+    await call.message.edit_text(get_text(lang, "cleared"), reply_markup=main_menu_kb(lang, mode))
     await call.answer()
 
 # ========== АДМИН ==========
@@ -1009,11 +1012,12 @@ async def main():
     init_dbs()
     bot = Bot(token=BOT_TOKEN)
     await bot.set_my_commands([
-        BotCommand(command="start", description="Запуск / Start"),
+        BotCommand(command="start", description="Start / Запуск"),
+        BotCommand(command="set_channel", description="Set channel (admin only)"),
     ])
     dp = Dispatcher()
     dp.include_router(router)
-    print("✅ Бот запущен! Режимы: реальная торговля + бэктест, ссылки на таймфреймы, Excel для обоих режимов.")
+    print("✅ Бот запущен!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
