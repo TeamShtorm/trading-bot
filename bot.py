@@ -11,6 +11,7 @@ from aiogram.fsm.state import State, StatesGroup
 import pandas as pd
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
+from aiohttp import web
 
 # ========== КОНФИГ ==========
 BOT_TOKEN = "8584035526:AAG8Q15ym8TONEAOH4_8_eQaXnsV4VhhIYs"
@@ -870,7 +871,7 @@ async def real_emotion(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(get_text(lang, "trade_saved"), parse_mode="Markdown", reply_markup=real_menu_kb(lang))
     await call.answer()
 
-# ---------- СПИСОК СДЕЛОК РЕАЛЬНОЙ ТОРГОВЛИ ----------
+# ---------- СПИСОК СДЕЛОК ----------
 @dp.callback_query(F.data == "real_list_trades")
 async def real_list_trades(call: CallbackQuery, state: FSMContext):
     await state.clear()
@@ -1337,6 +1338,22 @@ async def cmd_get_backtest(msg: Message):
     await msg.answer_document(document=FSInputFile(fname), caption=get_text(lang, "excel_ready"))
     os.remove(fname)
 
+# ========== ВЕБ-СЕРВЕР ДЛЯ RENDER ==========
+async def health_check(request):
+    return web.Response(text="I'm alive!")
+
+async def run_web_server():
+    app = web.Application()
+    app.router.add_get('/', health_check)
+    app.router.add_get('/health', health_check)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"🌐 Веб-сервер для проверок запущен на порту {port}")
+    await asyncio.Event().wait()
+
 # ========== ЗАПУСК ==========
 async def set_commands(bot: Bot):
     await bot.set_my_commands([
@@ -1356,8 +1373,11 @@ async def main():
     init_dbs()
     bot = Bot(token=BOT_TOKEN)
     await set_commands(bot)
-    print("✅ Бот успешно запущен! Кнопки добавления ссылок исправлены.")
-    await dp.start_polling(bot)
+    print("✅ Бот успешно запущен!")
+    await asyncio.gather(
+        run_web_server(),
+        dp.start_polling(bot)
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
