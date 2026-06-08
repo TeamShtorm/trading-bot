@@ -517,10 +517,10 @@ def emotion_kb(lang, trade_id):
         [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
     ])
 
-def yesno_kb(lang):
+def link_yesno_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "yes"), callback_data="yes")],
-        [InlineKeyboardButton(text=get_text(lang, "no"), callback_data="no")]
+        [InlineKeyboardButton(text=get_text(lang, "yes"), callback_data="link_yes")],
+        [InlineKeyboardButton(text=get_text(lang, "no"), callback_data="link_no")]
     ])
 
 def back_kb(lang):
@@ -633,7 +633,6 @@ class RealTradeForm(StatesGroup):
     links = State()
     trade_date = State()
     emotion = State()
-    emotion_value = State()
 
 class BacktestForm(StatesGroup):
     period_start = State()
@@ -788,17 +787,17 @@ async def real_comment(msg: Message, state: FSMContext):
     await state.update_data(comment=com)
     await state.set_state(RealTradeForm.add_link)
     lang = get_user_lang(msg.from_user.id)
-    await msg.answer(get_text(lang, "add_link_question"), reply_markup=yesno_kb(lang))
+    await msg.answer(get_text(lang, "add_link_question"), reply_markup=link_yesno_kb(lang))
 
-@dp.callback_query(F.data == "yes")
-async def real_add_link(call: CallbackQuery, state: FSMContext):
+@dp.callback_query(F.data == "link_yes")
+async def link_yes_handler(call: CallbackQuery, state: FSMContext):
     await state.set_state(RealTradeForm.link_url)
     lang = get_user_lang(call.from_user.id)
     await call.message.edit_text(get_text(lang, "enter_link"), reply_markup=back_kb(lang))
     await call.answer()
 
-@dp.callback_query(F.data == "no")
-async def real_skip_links(call: CallbackQuery, state: FSMContext):
+@dp.callback_query(F.data == "link_no")
+async def link_no_handler(call: CallbackQuery, state: FSMContext):
     await state.update_data(links="")
     await state.set_state(RealTradeForm.trade_date)
     lang = get_user_lang(call.from_user.id)
@@ -822,7 +821,7 @@ async def real_get_tf(msg: Message, state: FSMContext):
     await state.update_data(links=links)
     await state.set_state(RealTradeForm.add_link)
     lang = get_user_lang(msg.from_user.id)
-    await msg.answer(get_text(lang, "link_saved"), reply_markup=yesno_kb(lang))
+    await msg.answer(get_text(lang, "link_saved"), reply_markup=link_yesno_kb(lang))
 
 @dp.message(RealTradeForm.trade_date)
 async def real_date(msg: Message, state: FSMContext):
@@ -1131,7 +1130,7 @@ async def clear_yes(call: CallbackQuery):
     await call.message.edit_text(get_text(lang, "cleared"), reply_markup=real_menu_kb(lang))
     await call.answer()
 
-# ---------- БЭКТЕСТ (упрощённо) ----------
+# ---------- БЭКТЕСТ ----------
 @dp.callback_query(F.data == "backtest_add_trade")
 async def backtest_add_trade(call: CallbackQuery, state: FSMContext):
     await state.clear()
@@ -1357,7 +1356,7 @@ async def main():
     init_dbs()
     bot = Bot(token=BOT_TOKEN)
     await set_commands(bot)
-    print("✅ Бот успешно запущен! Все кнопки работают.")
+    print("✅ Бот успешно запущен! Кнопки добавления ссылок исправлены.")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
