@@ -2,6 +2,7 @@ import asyncio
 import sqlite3
 import os
 from datetime import datetime, timedelta
+from aiohttp import web
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, CallbackQuery, FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
@@ -11,7 +12,6 @@ from aiogram.fsm.state import State, StatesGroup
 import pandas as pd
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
-from aiohttp import web
 
 # ========== КОНФИГ ==========
 BOT_TOKEN = "8584035526:AAG8Q15ym8TONEAOH4_8_eQaXnsV4VhhIYs"
@@ -104,7 +104,14 @@ TEXTS = {
         "edit": "✏️ Редактировать",
         "delete": "🗑 Удалить",
         "back_to_list": "🔙 К списку",
-        "stats_header": "📊 Ваша статистика"
+        "stats_header": "📊 Ваша статистика",
+        "bt_period_start": "📅 Введите НАЧАЛО периода (ДД.ММ.ГГГГ):",
+        "bt_period_end": "📅 Введите КОНЕЦ периода (ДД.ММ.ГГГГ):",
+        "bt_timeframe": "⏱ Введите таймфрейм (M5, H1, H4, D1, W1):",
+        "enter_exit_price_bt": "💰 Введите цену выхода:",
+        "enter_link_bt": "🔗 Ссылка на скриншот (0 если нет):",
+        "error_number": "❌ Ошибка! Введите число.",
+        "error_date": "❌ Ошибка! Введите дату в формате ДД.ММ.ГГГГ."
     },
     "en": {
         "select_mode": "🎛 **Select mode:**",
@@ -189,7 +196,14 @@ TEXTS = {
         "edit": "✏️ Edit",
         "delete": "🗑 Delete",
         "back_to_list": "🔙 Back to list",
-        "stats_header": "📊 Your statistics"
+        "stats_header": "📊 Your statistics",
+        "bt_period_start": "📅 Enter START date (DD.MM.YYYY):",
+        "bt_period_end": "📅 Enter END date (DD.MM.YYYY):",
+        "bt_timeframe": "⏱ Enter timeframe (M5, H1, H4, D1, W1):",
+        "enter_exit_price_bt": "💰 Enter exit price:",
+        "enter_link_bt": "🔗 Screenshot link (0 if none):",
+        "error_number": "❌ Error! Enter a number.",
+        "error_date": "❌ Error! Enter date in DD.MM.YYYY format."
     }
 }
 
@@ -745,7 +759,7 @@ async def real_entry(msg: Message, state: FSMContext):
         await msg.answer(get_text(lang, "enter_exit_price"), reply_markup=back_kb(lang))
     except ValueError:
         lang = get_user_lang(msg.from_user.id)
-        await msg.answer("❌ Ошибка! Введите число. Например: 56700.50 или 0.25", reply_markup=back_kb(lang))
+        await msg.answer(get_text(lang, "error_number"), reply_markup=back_kb(lang))
 
 @dp.message(RealTradeForm.exit_price)
 async def real_exit(msg: Message, state: FSMContext):
@@ -757,7 +771,7 @@ async def real_exit(msg: Message, state: FSMContext):
         await msg.answer(get_text(lang, "enter_volume"), reply_markup=back_kb(lang))
     except ValueError:
         lang = get_user_lang(msg.from_user.id)
-        await msg.answer("❌ Ошибка! Введите число. Например: 57100.00", reply_markup=back_kb(lang))
+        await msg.answer(get_text(lang, "error_number"), reply_markup=back_kb(lang))
 
 @dp.message(RealTradeForm.volume)
 async def real_volume(msg: Message, state: FSMContext):
@@ -769,7 +783,7 @@ async def real_volume(msg: Message, state: FSMContext):
         await msg.answer(get_text(lang, "choose_result"), reply_markup=result_kb(lang, "real"))
     except ValueError:
         lang = get_user_lang(msg.from_user.id)
-        await msg.answer("❌ Ошибка! Введите число. Например: 0.25 или 1000", reply_markup=back_kb(lang))
+        await msg.answer(get_text(lang, "error_number"), reply_markup=back_kb(lang))
 
 @dp.callback_query(F.data.startswith("real_TAKE") | F.data.startswith("real_STOP") | F.data.startswith("real_BU"))
 async def real_result(call: CallbackQuery, state: FSMContext):
@@ -1027,7 +1041,7 @@ async def edit_text_value(msg: Message, state: FSMContext):
                 update_trade_field(trade_id, msg.from_user.id, "pnl", new_pnl)
             await msg.answer(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown")
         except ValueError:
-            await msg.answer("❌ Ошибка! Введите число (точка или запятая).")
+            await msg.answer(get_text(lang, "error_number"))
             return
     elif field == "exit_price":
         try:
@@ -1042,7 +1056,7 @@ async def edit_text_value(msg: Message, state: FSMContext):
                 update_trade_field(trade_id, msg.from_user.id, "pnl", new_pnl)
             await msg.answer(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown")
         except ValueError:
-            await msg.answer("❌ Ошибка! Введите число (точка или запятая).")
+            await msg.answer(get_text(lang, "error_number"))
             return
     elif field == "volume":
         try:
@@ -1057,7 +1071,7 @@ async def edit_text_value(msg: Message, state: FSMContext):
                 update_trade_field(trade_id, msg.from_user.id, "pnl", new_pnl)
             await msg.answer(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown")
         except ValueError:
-            await msg.answer("❌ Ошибка! Введите число (точка или запятая).")
+            await msg.answer(get_text(lang, "error_number"))
             return
     elif field == "comment":
         update_trade_field(trade_id, msg.from_user.id, "comment", value)
@@ -1068,7 +1082,7 @@ async def edit_text_value(msg: Message, state: FSMContext):
             update_trade_field(trade_id, msg.from_user.id, "trade_date", new_date)
             await msg.answer(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown")
         except ValueError:
-            await msg.answer("❌ Ошибка! Введите дату в формате ДД.ММ.ГГГГ (например, 25.12.2024)")
+            await msg.answer(get_text(lang, "error_date"))
             return
     
     await state.clear()
@@ -1340,7 +1354,7 @@ async def cmd_get_backtest(msg: Message):
 
 # ========== ВЕБ-СЕРВЕР ДЛЯ RENDER ==========
 async def health_check(request):
-    return web.Response(text="I'm alive!")
+    return web.Response(text="Bot is alive!")
 
 async def run_web_server():
     app = web.Application()
@@ -1351,21 +1365,21 @@ async def run_web_server():
     port = int(os.environ.get("PORT", 10000))
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
-    print(f"🌐 Веб-сервер для проверок запущен на порту {port}")
+    print(f"🌐 Web server started on port {port}")
+    # Keep the server running
     await asyncio.Event().wait()
 
-# ========== ЗАПУСК ==========
 async def set_commands(bot: Bot):
     await bot.set_my_commands([
-        BotCommand(command="start", description="Главное меню"),
-        BotCommand(command="new", description="➕ Новая сделка"),
-        BotCommand(command="stats", description="Вся статистика"),
-        BotCommand(command="day", description="Статистика за день"),
-        BotCommand(command="week", description="Статистика за неделю"),
-        BotCommand(command="month", description="Статистика за месяц"),
-        BotCommand(command="clear", description="Очистить журнал"),
-        BotCommand(command="get_real", description="Excel (реальная торговля)"),
-        BotCommand(command="get_backtest", description="Excel (бэктест)"),
+        BotCommand(command="start", description="Main menu"),
+        BotCommand(command="new", description="➕ New trade"),
+        BotCommand(command="stats", description="📊 All statistics"),
+        BotCommand(command="day", description="📆 Today's statistics"),
+        BotCommand(command="week", description="📅 Weekly statistics"),
+        BotCommand(command="month", description="📊 Monthly statistics"),
+        BotCommand(command="clear", description="🗑 Clear journal"),
+        BotCommand(command="get_real", description="📎 Excel (Real trading)"),
+        BotCommand(command="get_backtest", description="📎 Excel (Backtest)"),
     ])
 
 async def main():
@@ -1373,7 +1387,8 @@ async def main():
     init_dbs()
     bot = Bot(token=BOT_TOKEN)
     await set_commands(bot)
-    print("✅ Бот успешно запущен!")
+    print("✅ Bot started successfully!")
+    # Run web server and bot together
     await asyncio.gather(
         run_web_server(),
         dp.start_polling(bot)
