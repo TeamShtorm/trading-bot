@@ -2,7 +2,6 @@ import asyncio
 import sqlite3
 import os
 from datetime import datetime, timedelta
-from aiohttp import web
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, CallbackQuery, FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
@@ -522,38 +521,38 @@ def result_kb(lang, prefix):
         [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
     ])
 
-def emotion_kb(lang, trade_id):
+def emotion_kb(trade_id):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "emotion_calm"), callback_data=f"emotion_{trade_id}_calm")],
-        [InlineKeyboardButton(text=get_text(lang, "emotion_fear"), callback_data=f"emotion_{trade_id}_fear")],
-        [InlineKeyboardButton(text=get_text(lang, "emotion_greed"), callback_data=f"emotion_{trade_id}_greed")],
-        [InlineKeyboardButton(text=get_text(lang, "emotion_tilt"), callback_data=f"emotion_{trade_id}_tilt")],
-        [InlineKeyboardButton(text=get_text(lang, "emotion_confidence"), callback_data=f"emotion_{trade_id}_confidence")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
+        [InlineKeyboardButton(text="😊 Спокойствие", callback_data=f"emotion_{trade_id}_calm")],
+        [InlineKeyboardButton(text="😨 Страх", callback_data=f"emotion_{trade_id}_fear")],
+        [InlineKeyboardButton(text="😈 Жадность", callback_data=f"emotion_{trade_id}_greed")],
+        [InlineKeyboardButton(text="🤬 Тильт", callback_data=f"emotion_{trade_id}_tilt")],
+        [InlineKeyboardButton(text="😌 Уверенность", callback_data=f"emotion_{trade_id}_confidence")],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="back_mode")]
     ])
 
-def link_yesno_kb(lang):
+def link_yesno_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "yes"), callback_data="link_yes")],
-        [InlineKeyboardButton(text=get_text(lang, "no"), callback_data="link_no")]
+        [InlineKeyboardButton(text="✅ Да", callback_data="link_yes")],
+        [InlineKeyboardButton(text="❌ Нет", callback_data="link_no")]
     ])
 
-def back_kb(lang):
+def back_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="back_mode")]
     ])
 
-def confirm_kb(lang):
+def confirm_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "confirm_clear"), callback_data="clear_yes")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
+        [InlineKeyboardButton(text="⚠️ ДА, УДАЛИТЬ ВСЁ", callback_data="clear_yes")],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="back_mode")]
     ])
 
-def settings_kb(lang):
+def settings_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "change_lang"), callback_data="change_lang")],
-        [InlineKeyboardButton(text=get_text(lang, "support"), callback_data="support")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
+        [InlineKeyboardButton(text="🌐 Сменить язык", callback_data="change_lang_menu")],
+        [InlineKeyboardButton(text="📞 Поддержка", callback_data="support_menu")],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="back_mode")]
     ])
 
 def lang_kb():
@@ -562,7 +561,7 @@ def lang_kb():
         [InlineKeyboardButton(text="🇬🇧 English", callback_data="lang_en")]
     ])
 
-def trades_list_kb(trades, page, total_pages, lang):
+def trades_list_kb(trades, page, total_pages):
     buttons = []
     for _, row in trades.iterrows():
         pnl = row['pnl']
@@ -578,59 +577,59 @@ def trades_list_kb(trades, page, total_pages, lang):
         buttons.append([InlineKeyboardButton(text=f"{row['asset']} {emoji} {pnl_text}", callback_data=f"trade_{row['id']}")])
     nav = []
     if page > 1:
-        nav.append(InlineKeyboardButton(text=get_text(lang, "prev"), callback_data=f"trades_page_{page-1}"))
+        nav.append(InlineKeyboardButton(text="⬅️ Назад", callback_data=f"trades_page_{page-1}"))
     if page < total_pages:
-        nav.append(InlineKeyboardButton(text=get_text(lang, "next"), callback_data=f"trades_page_{page+1}"))
+        nav.append(InlineKeyboardButton(text="Вперед ➡️", callback_data=f"trades_page_{page+1}"))
     if nav:
         buttons.append(nav)
-    buttons.append([InlineKeyboardButton(text=get_text(lang, "refresh"), callback_data="real_list_trades"),
-                   InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")])
+    buttons.append([InlineKeyboardButton(text="🔄 Обновить", callback_data="real_list_trades"),
+                   InlineKeyboardButton(text="🔙 Назад", callback_data="back_mode")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-def trade_detail_kb(trade_id, lang):
+def trade_detail_kb(trade_id):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "edit"), callback_data=f"edit_{trade_id}"),
-         InlineKeyboardButton(text=get_text(lang, "delete"), callback_data=f"delete_{trade_id}")],
-        [InlineKeyboardButton(text=get_text(lang, "back_to_list"), callback_data="real_list_trades")]
+        [InlineKeyboardButton(text="✏️ Редактировать", callback_data=f"edit_{trade_id}"),
+         InlineKeyboardButton(text="🗑 Удалить", callback_data=f"delete_{trade_id}")],
+        [InlineKeyboardButton(text="🔙 К списку", callback_data="real_list_trades")]
     ])
 
-def edit_field_kb(trade_id, lang):
+def edit_field_kb(trade_id):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "edit_asset"), callback_data=f"edit_field_{trade_id}_asset")],
-        [InlineKeyboardButton(text=get_text(lang, "edit_direction"), callback_data=f"edit_field_{trade_id}_direction")],
-        [InlineKeyboardButton(text=get_text(lang, "edit_entry_price"), callback_data=f"edit_field_{trade_id}_entry_price")],
-        [InlineKeyboardButton(text=get_text(lang, "edit_exit_price"), callback_data=f"edit_field_{trade_id}_exit_price")],
-        [InlineKeyboardButton(text=get_text(lang, "edit_volume"), callback_data=f"edit_field_{trade_id}_volume")],
-        [InlineKeyboardButton(text=get_text(lang, "edit_result"), callback_data=f"edit_field_{trade_id}_result")],
-        [InlineKeyboardButton(text=get_text(lang, "edit_comment"), callback_data=f"edit_field_{trade_id}_comment")],
-        [InlineKeyboardButton(text=get_text(lang, "edit_date"), callback_data=f"edit_field_{trade_id}_trade_date")],
-        [InlineKeyboardButton(text=get_text(lang, "edit_emotion"), callback_data=f"edit_field_{trade_id}_emotion")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data=f"trade_{trade_id}")]
+        [InlineKeyboardButton(text="🪙 Актив", callback_data=f"edit_field_{trade_id}_asset")],
+        [InlineKeyboardButton(text="📈 Направление", callback_data=f"edit_field_{trade_id}_direction")],
+        [InlineKeyboardButton(text="💰 Цена входа", callback_data=f"edit_field_{trade_id}_entry_price")],
+        [InlineKeyboardButton(text="💰 Цена выхода", callback_data=f"edit_field_{trade_id}_exit_price")],
+        [InlineKeyboardButton(text="📊 Объём", callback_data=f"edit_field_{trade_id}_volume")],
+        [InlineKeyboardButton(text="🎯 Исход", callback_data=f"edit_field_{trade_id}_result")],
+        [InlineKeyboardButton(text="📝 Комментарий", callback_data=f"edit_field_{trade_id}_comment")],
+        [InlineKeyboardButton(text="📅 Дата", callback_data=f"edit_field_{trade_id}_trade_date")],
+        [InlineKeyboardButton(text="😊 Эмоции", callback_data=f"edit_field_{trade_id}_emotion")],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data=f"trade_{trade_id}")]
     ])
 
-def edit_direction_kb(trade_id, lang):
+def edit_direction_kb(trade_id):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "long"), callback_data=f"edit_value_{trade_id}_direction_LONG"),
-         InlineKeyboardButton(text=get_text(lang, "short"), callback_data=f"edit_value_{trade_id}_direction_SHORT")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data=f"edit_{trade_id}")]
+        [InlineKeyboardButton(text="🟢 LONG", callback_data=f"edit_value_{trade_id}_direction_LONG"),
+         InlineKeyboardButton(text="🔴 SHORT", callback_data=f"edit_value_{trade_id}_direction_SHORT")],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data=f"edit_{trade_id}")]
     ])
 
-def edit_result_kb(trade_id, lang):
+def edit_result_kb(trade_id):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "take"), callback_data=f"edit_value_{trade_id}_result_TAKE"),
-         InlineKeyboardButton(text=get_text(lang, "stop"), callback_data=f"edit_value_{trade_id}_result_STOP"),
-         InlineKeyboardButton(text=get_text(lang, "bu"), callback_data=f"edit_value_{trade_id}_result_BU")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data=f"edit_{trade_id}")]
+        [InlineKeyboardButton(text="✅ Тейк", callback_data=f"edit_value_{trade_id}_result_TAKE"),
+         InlineKeyboardButton(text="❌ Стоп", callback_data=f"edit_value_{trade_id}_result_STOP"),
+         InlineKeyboardButton(text="⚖️ БУ", callback_data=f"edit_value_{trade_id}_result_BU")],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data=f"edit_{trade_id}")]
     ])
 
-def edit_emotion_kb(trade_id, lang):
+def edit_emotion_kb(trade_id):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "emotion_calm"), callback_data=f"edit_value_{trade_id}_emotion_😊 Спокойствие")],
-        [InlineKeyboardButton(text=get_text(lang, "emotion_fear"), callback_data=f"edit_value_{trade_id}_emotion_😨 Страх")],
-        [InlineKeyboardButton(text=get_text(lang, "emotion_greed"), callback_data=f"edit_value_{trade_id}_emotion_😈 Жадность")],
-        [InlineKeyboardButton(text=get_text(lang, "emotion_tilt"), callback_data=f"edit_value_{trade_id}_emotion_🤬 Тильт")],
-        [InlineKeyboardButton(text=get_text(lang, "emotion_confidence"), callback_data=f"edit_value_{trade_id}_emotion_😌 Уверенность")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data=f"edit_{trade_id}")]
+        [InlineKeyboardButton(text="😊 Спокойствие", callback_data=f"edit_value_{trade_id}_emotion_😊 Спокойствие")],
+        [InlineKeyboardButton(text="😨 Страх", callback_data=f"edit_value_{trade_id}_emotion_😨 Страх")],
+        [InlineKeyboardButton(text="😈 Жадность", callback_data=f"edit_value_{trade_id}_emotion_😈 Жадность")],
+        [InlineKeyboardButton(text="🤬 Тильт", callback_data=f"edit_value_{trade_id}_emotion_🤬 Тильт")],
+        [InlineKeyboardButton(text="😌 Уверенность", callback_data=f"edit_value_{trade_id}_emotion_😌 Уверенность")],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data=f"edit_{trade_id}")]
     ])
 
 # ========== FSM ==========
@@ -673,7 +672,7 @@ async def cmd_start(msg: Message, state: FSMContext):
     uid = msg.from_user.id
     lang = get_user_lang(uid)
     if not lang:
-        await msg.answer(get_text("ru", "select_language"), reply_markup=lang_kb())
+        await msg.answer("🌐 Выберите язык / Choose language:", reply_markup=lang_kb())
         return
     await msg.answer(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_kb(lang))
 
@@ -710,18 +709,19 @@ async def back_mode(call: CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data == "settings_menu")
 async def settings_menu(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "settings_menu"), parse_mode="Markdown", reply_markup=settings_kb(lang))
+    await call.message.edit_text("⚙️ **Настройки**\n\nВыберите действие:", parse_mode="Markdown", reply_markup=settings_kb())
     await call.answer()
 
-@dp.callback_query(F.data == "change_lang")
+@dp.callback_query(F.data == "change_lang_menu")
 async def change_lang_menu(call: CallbackQuery):
-    await call.message.edit_text(get_text("ru", "select_language"), reply_markup=lang_kb())
+    await call.message.edit_text("🌐 **Выберите язык / Choose language:**", parse_mode="Markdown", reply_markup=lang_kb())
     await call.answer()
 
-@dp.callback_query(F.data == "support")
+@dp.callback_query(F.data == "support_menu")
 async def support_menu(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "support_info"), parse_mode="Markdown", reply_markup=settings_kb(lang))
+    text = "📞 **Поддержка**\n\nПо всем вопросам пишите: @ваш_username"
+    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=settings_kb())
     await call.answer()
 
 # ---------- РЕАЛЬНАЯ ТОРГОВЛЯ ----------
@@ -730,7 +730,7 @@ async def real_add_trade(call: CallbackQuery, state: FSMContext):
     await state.clear()
     await state.set_state(RealTradeForm.asset)
     lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "enter_asset"), reply_markup=back_kb(lang))
+    await call.message.edit_text(get_text(lang, "enter_asset"), parse_mode="Markdown", reply_markup=back_kb())
     await call.answer()
 
 @dp.message(RealTradeForm.asset)
@@ -746,7 +746,7 @@ async def real_direction(call: CallbackQuery, state: FSMContext):
     await state.update_data(direction=direction)
     await state.set_state(RealTradeForm.entry_price)
     lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "enter_entry_price"), reply_markup=back_kb(lang))
+    await call.message.edit_text(get_text(lang, "enter_entry_price"), parse_mode="Markdown", reply_markup=back_kb())
     await call.answer()
 
 @dp.message(RealTradeForm.entry_price)
@@ -756,10 +756,10 @@ async def real_entry(msg: Message, state: FSMContext):
         await state.update_data(entry_price=float(value))
         await state.set_state(RealTradeForm.exit_price)
         lang = get_user_lang(msg.from_user.id)
-        await msg.answer(get_text(lang, "enter_exit_price"), reply_markup=back_kb(lang))
+        await msg.answer(get_text(lang, "enter_exit_price"), reply_markup=back_kb())
     except ValueError:
         lang = get_user_lang(msg.from_user.id)
-        await msg.answer(get_text(lang, "error_number"), reply_markup=back_kb(lang))
+        await msg.answer(get_text(lang, "error_number"), reply_markup=back_kb())
 
 @dp.message(RealTradeForm.exit_price)
 async def real_exit(msg: Message, state: FSMContext):
@@ -768,10 +768,10 @@ async def real_exit(msg: Message, state: FSMContext):
         await state.update_data(exit_price=float(value))
         await state.set_state(RealTradeForm.volume)
         lang = get_user_lang(msg.from_user.id)
-        await msg.answer(get_text(lang, "enter_volume"), reply_markup=back_kb(lang))
+        await msg.answer(get_text(lang, "enter_volume"), reply_markup=back_kb())
     except ValueError:
         lang = get_user_lang(msg.from_user.id)
-        await msg.answer(get_text(lang, "error_number"), reply_markup=back_kb(lang))
+        await msg.answer(get_text(lang, "error_number"), reply_markup=back_kb())
 
 @dp.message(RealTradeForm.volume)
 async def real_volume(msg: Message, state: FSMContext):
@@ -783,7 +783,7 @@ async def real_volume(msg: Message, state: FSMContext):
         await msg.answer(get_text(lang, "choose_result"), reply_markup=result_kb(lang, "real"))
     except ValueError:
         lang = get_user_lang(msg.from_user.id)
-        await msg.answer(get_text(lang, "error_number"), reply_markup=back_kb(lang))
+        await msg.answer(get_text(lang, "error_number"), reply_markup=back_kb())
 
 @dp.callback_query(F.data.startswith("real_TAKE") | F.data.startswith("real_STOP") | F.data.startswith("real_BU"))
 async def real_result(call: CallbackQuery, state: FSMContext):
@@ -791,7 +791,7 @@ async def real_result(call: CallbackQuery, state: FSMContext):
     await state.update_data(result=result)
     await state.set_state(RealTradeForm.comment)
     lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "enter_comment"), reply_markup=back_kb(lang))
+    await call.message.edit_text(get_text(lang, "enter_comment"), parse_mode="Markdown", reply_markup=back_kb())
     await call.answer()
 
 @dp.message(RealTradeForm.comment)
@@ -801,14 +801,12 @@ async def real_comment(msg: Message, state: FSMContext):
         com = ""
     await state.update_data(comment=com)
     await state.set_state(RealTradeForm.add_link)
-    lang = get_user_lang(msg.from_user.id)
-    await msg.answer(get_text(lang, "add_link_question"), reply_markup=link_yesno_kb(lang))
+    await msg.answer("🔗 Хотите добавить ссылку на график?", reply_markup=link_yesno_kb())
 
 @dp.callback_query(F.data == "link_yes")
 async def link_yes_handler(call: CallbackQuery, state: FSMContext):
     await state.set_state(RealTradeForm.link_url)
-    lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "enter_link"), reply_markup=back_kb(lang))
+    await call.message.edit_text("🔗 Отправьте ссылку:", reply_markup=back_kb())
     await call.answer()
 
 @dp.callback_query(F.data == "link_no")
@@ -816,15 +814,14 @@ async def link_no_handler(call: CallbackQuery, state: FSMContext):
     await state.update_data(links="")
     await state.set_state(RealTradeForm.trade_date)
     lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "enter_date"), reply_markup=back_kb(lang))
+    await call.message.edit_text(get_text(lang, "enter_date"), parse_mode="Markdown", reply_markup=back_kb())
     await call.answer()
 
 @dp.message(RealTradeForm.link_url)
 async def real_get_link(msg: Message, state: FSMContext):
     await state.update_data(link_url=msg.text)
     await state.set_state(RealTradeForm.link_tf)
-    lang = get_user_lang(msg.from_user.id)
-    await msg.answer(get_text(lang, "enter_timeframe"), reply_markup=back_kb(lang))
+    await msg.answer("⏱ Какой это таймфрейм? (15м, 1ч, 4ч, 1д, 1н, 1м)", reply_markup=back_kb())
 
 @dp.message(RealTradeForm.link_tf)
 async def real_get_tf(msg: Message, state: FSMContext):
@@ -835,8 +832,7 @@ async def real_get_tf(msg: Message, state: FSMContext):
     links = f"{links}\n{new_link}" if links else new_link
     await state.update_data(links=links)
     await state.set_state(RealTradeForm.add_link)
-    lang = get_user_lang(msg.from_user.id)
-    await msg.answer(get_text(lang, "link_saved"), reply_markup=link_yesno_kb(lang))
+    await msg.answer("✅ Ссылка сохранена! Добавить ещё?", reply_markup=link_yesno_kb())
 
 @dp.message(RealTradeForm.trade_date)
 async def real_date(msg: Message, state: FSMContext):
@@ -852,7 +848,7 @@ async def real_date(msg: Message, state: FSMContext):
             return
     await state.update_data(trade_date=trade_date)
     await state.set_state(RealTradeForm.emotion)
-    await msg.answer(get_text(lang, "enter_emotion"), reply_markup=emotion_kb(lang, "temp"))
+    await msg.answer("😊 Какие эмоции были?", reply_markup=emotion_kb("temp"))
 
 @dp.callback_query(F.data.startswith("emotion_temp_"))
 async def real_emotion(call: CallbackQuery, state: FSMContext):
@@ -906,7 +902,7 @@ async def real_list_trades(call: CallbackQuery, state: FSMContext):
     trades_df = df.iloc[start:end]
     await state.update_data(page=page)
     text = get_text(lang, "recent_trades", page=page, total_pages=pages)
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=trades_list_kb(trades_df, page, pages, lang))
+    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=trades_list_kb(trades_df, page, pages))
     await call.answer()
 
 @dp.callback_query(F.data.startswith("trades_page_"))
@@ -933,7 +929,7 @@ async def show_trade_detail(call: CallbackQuery, state: FSMContext):
         pnl=trade['pnl'], result=result_map.get(trade['result'], trade['result']),
         date=trade['trade_date'], emotion=trade['emotion'], links=links, comment=trade['comment'] or "-"
     )
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=trade_detail_kb(trade_id, lang))
+    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=trade_detail_kb(trade_id))
     await call.answer()
 
 # ---------- УДАЛЕНИЕ ----------
@@ -943,8 +939,8 @@ async def delete_confirm(call: CallbackQuery, state: FSMContext):
     lang = get_user_lang(call.from_user.id)
     await state.update_data(delete_id=trade_id)
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "yes"), callback_data="delete_yes"),
-         InlineKeyboardButton(text=get_text(lang, "no"), callback_data="real_list_trades")]
+        [InlineKeyboardButton(text="✅ Да", callback_data="delete_yes"),
+         InlineKeyboardButton(text="❌ Нет", callback_data="real_list_trades")]
     ])
     await call.message.edit_text(get_text(lang, "confirm_delete", id=trade_id), parse_mode="Markdown", reply_markup=kb)
     await call.answer()
@@ -963,8 +959,7 @@ async def delete_execute(call: CallbackQuery, state: FSMContext):
 async def edit_menu(call: CallbackQuery, state: FSMContext):
     trade_id = int(call.data.split("_")[1])
     await state.update_data(edit_id=trade_id)
-    lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "edit_field_select", id=trade_id), parse_mode="Markdown", reply_markup=edit_field_kb(trade_id, lang))
+    await call.message.edit_text(f"✏️ **Редактирование сделки #{trade_id}**\n\nВыберите поле:", parse_mode="Markdown", reply_markup=edit_field_kb(trade_id))
     await call.answer()
 
 @dp.callback_query(F.data.startswith("edit_field_"))
@@ -972,20 +967,24 @@ async def edit_field(call: CallbackQuery, state: FSMContext):
     parts = call.data.split("_")
     trade_id = int(parts[2])
     field = parts[3]
-    lang = get_user_lang(call.from_user.id)
     await state.update_data(edit_id=trade_id, edit_field=field)
     if field == "direction":
-        await call.message.edit_text(get_text(lang, "choose_direction"), parse_mode="Markdown", reply_markup=edit_direction_kb(trade_id, lang))
+        await call.message.edit_text("📈 Выберите направление:", reply_markup=edit_direction_kb(trade_id))
     elif field == "result":
-        await call.message.edit_text(get_text(lang, "choose_result"), parse_mode="Markdown", reply_markup=edit_result_kb(trade_id, lang))
+        await call.message.edit_text("🎯 Как закрылась сделка?", reply_markup=edit_result_kb(trade_id))
     elif field == "emotion":
-        await call.message.edit_text(get_text(lang, "enter_emotion"), parse_mode="Markdown", reply_markup=edit_emotion_kb(trade_id, lang))
+        await call.message.edit_text("😊 Какие эмоции были?", reply_markup=edit_emotion_kb(trade_id))
     else:
-        field_names = {"asset": get_text(lang, "edit_asset"), "entry_price": get_text(lang, "edit_entry_price"),
-                       "exit_price": get_text(lang, "edit_exit_price"), "volume": get_text(lang, "edit_volume"),
-                       "comment": get_text(lang, "edit_comment"), "trade_date": get_text(lang, "edit_date")}
+        field_names = {
+            "asset": "🪙 Актив",
+            "entry_price": "💰 Цена входа",
+            "exit_price": "💰 Цена выхода",
+            "volume": "📊 Объём",
+            "comment": "📝 Комментарий",
+            "trade_date": "📅 Дата"
+        }
         await state.set_state(EditForm.waiting_for_value)
-        await call.message.edit_text(get_text(lang, "enter_new_value", field=field_names.get(field, field)), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data=f"edit_{trade_id}")]]))
+        await call.message.edit_text(f"Введите новое значение для {field_names.get(field, field)}:", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔙 Назад", callback_data=f"edit_{trade_id}")]]))
     await call.answer()
 
 @dp.callback_query(F.data.startswith("edit_value_"))
@@ -997,15 +996,15 @@ async def edit_value(call: CallbackQuery, state: FSMContext):
     lang = get_user_lang(call.from_user.id)
     if field == "direction":
         update_trade_field(trade_id, call.from_user.id, "direction", value)
-        await call.message.edit_text(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back_to_list"), callback_data="real_list_trades")]]))
+        await call.message.edit_text(f"✅ Направление обновлено!", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔙 К списку", callback_data="real_list_trades")]]))
     elif field == "result":
         update_trade_field(trade_id, call.from_user.id, "result", value)
         if value == "BU":
             update_trade_field(trade_id, call.from_user.id, "pnl", 0)
-        await call.message.edit_text(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back_to_list"), callback_data="real_list_trades")]]))
+        await call.message.edit_text(f"✅ Исход обновлён!", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔙 К списку", callback_data="real_list_trades")]]))
     elif field == "emotion":
         update_trade_field(trade_id, call.from_user.id, "emotion", value)
-        await call.message.edit_text(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back_to_list"), callback_data="real_list_trades")]]))
+        await call.message.edit_text(f"✅ Эмоции обновлены!", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔙 К списку", callback_data="real_list_trades")]]))
     await call.answer()
 
 @dp.message(EditForm.waiting_for_value)
@@ -1027,7 +1026,7 @@ async def edit_text_value(msg: Message, state: FSMContext):
     
     if field == "asset":
         update_trade_field(trade_id, msg.from_user.id, "asset", value.upper())
-        await msg.answer(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown")
+        await msg.answer(f"✅ Актив обновлён!", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔙 К списку", callback_data="real_list_trades")]]))
     elif field == "entry_price":
         try:
             val = float(value.replace(",", "."))
@@ -1039,7 +1038,7 @@ async def edit_text_value(msg: Message, state: FSMContext):
                 else:
                     new_pnl = (val - trade['exit_price']) * trade['volume']
                 update_trade_field(trade_id, msg.from_user.id, "pnl", new_pnl)
-            await msg.answer(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown")
+            await msg.answer(f"✅ Цена входа обновлена!", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔙 К списку", callback_data="real_list_trades")]]))
         except ValueError:
             await msg.answer(get_text(lang, "error_number"))
             return
@@ -1054,7 +1053,7 @@ async def edit_text_value(msg: Message, state: FSMContext):
                 else:
                     new_pnl = (trade['entry_price'] - val) * trade['volume']
                 update_trade_field(trade_id, msg.from_user.id, "pnl", new_pnl)
-            await msg.answer(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown")
+            await msg.answer(f"✅ Цена выхода обновлена!", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔙 К списку", callback_data="real_list_trades")]]))
         except ValueError:
             await msg.answer(get_text(lang, "error_number"))
             return
@@ -1069,24 +1068,23 @@ async def edit_text_value(msg: Message, state: FSMContext):
                 else:
                     new_pnl = (trade['entry_price'] - trade['exit_price']) * val
                 update_trade_field(trade_id, msg.from_user.id, "pnl", new_pnl)
-            await msg.answer(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown")
+            await msg.answer(f"✅ Объём обновлён!", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔙 К списку", callback_data="real_list_trades")]]))
         except ValueError:
             await msg.answer(get_text(lang, "error_number"))
             return
     elif field == "comment":
         update_trade_field(trade_id, msg.from_user.id, "comment", value)
-        await msg.answer(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown")
+        await msg.answer(f"✅ Комментарий обновлён!", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔙 К списку", callback_data="real_list_trades")]]))
     elif field == "trade_date":
         try:
             new_date = datetime.strptime(value, "%d.%m.%Y").strftime("%Y-%m-%d")
             update_trade_field(trade_id, msg.from_user.id, "trade_date", new_date)
-            await msg.answer(get_text(lang, "field_updated", field=get_text(lang, f"edit_{field}")), parse_mode="Markdown")
+            await msg.answer(f"✅ Дата обновлена!", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔙 К списку", callback_data="real_list_trades")]]))
         except ValueError:
             await msg.answer(get_text(lang, "error_date"))
             return
     
     await state.clear()
-    await msg.answer("✅ Редактирование завершено", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back_to_list"), callback_data="real_list_trades")]]))
 
 # ---------- СТАТИСТИКА ----------
 @dp.callback_query(F.data == "stats_menu")
@@ -1094,7 +1092,7 @@ async def stats_menu(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
     df = get_trades_filtered(call.from_user.id)
     text = get_stats_text(df, lang)
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]]))
+    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔙 Назад", callback_data="back_mode")]]))
     await call.answer()
 
 # ---------- EXCEL ----------
@@ -1107,11 +1105,8 @@ async def get_real_excel(call: CallbackQuery):
         await call.answer(get_text(lang, "no_data_add_trade"), show_alert=True)
         return
     fname = export_real_to_excel(df, uid)
-    try:
-        await call.message.answer_document(document=FSInputFile(fname), caption=get_text(lang, "excel_ready"))
-    finally:
-        if os.path.exists(fname):
-            os.remove(fname)
+    await call.message.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт")
+    os.remove(fname)
     await call.answer()
 
 @dp.callback_query(F.data == "get_backtest_excel")
@@ -1123,18 +1118,15 @@ async def get_backtest_excel(call: CallbackQuery):
         await call.answer(get_text(lang, "no_data_add_trade"), show_alert=True)
         return
     fname = export_backtest_to_excel(df, uid)
-    try:
-        await call.message.answer_document(document=FSInputFile(fname), caption=get_text(lang, "excel_ready"))
-    finally:
-        if os.path.exists(fname):
-            os.remove(fname)
+    await call.message.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт")
+    os.remove(fname)
     await call.answer()
 
 # ---------- ОЧИСТКА ----------
 @dp.callback_query(F.data == "clear_confirm")
 async def clear_confirm(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text("⚠️ Удалить все сделки?", reply_markup=confirm_kb(lang))
+    await call.message.edit_text("⚠️ Удалить все сделки?", reply_markup=confirm_kb())
     await call.answer()
 
 @dp.callback_query(F.data == "clear_yes")
@@ -1151,7 +1143,7 @@ async def backtest_add_trade(call: CallbackQuery, state: FSMContext):
     await state.clear()
     await state.set_state(BacktestForm.period_start)
     lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "bt_period_start"), reply_markup=back_kb(lang))
+    await call.message.edit_text(get_text(lang, "bt_period_start"), parse_mode="Markdown", reply_markup=back_kb())
     await call.answer()
 
 @dp.callback_query(F.data == "backtest_list_trades")
@@ -1178,7 +1170,7 @@ async def bt_start(msg: Message, state: FSMContext):
         await state.update_data(period_start=d)
         await state.set_state(BacktestForm.period_end)
         lang = get_user_lang(msg.from_user.id)
-        await msg.answer(get_text(lang, "bt_period_end"), reply_markup=back_kb(lang))
+        await msg.answer(get_text(lang, "bt_period_end"), reply_markup=back_kb())
     except:
         lang = get_user_lang(msg.from_user.id)
         await msg.answer(get_text(lang, "error_date"))
@@ -1190,7 +1182,7 @@ async def bt_end(msg: Message, state: FSMContext):
         await state.update_data(period_end=d)
         await state.set_state(BacktestForm.timeframe)
         lang = get_user_lang(msg.from_user.id)
-        await msg.answer(get_text(lang, "bt_timeframe"), reply_markup=back_kb(lang))
+        await msg.answer(get_text(lang, "bt_timeframe"), reply_markup=back_kb())
     except:
         lang = get_user_lang(msg.from_user.id)
         await msg.answer(get_text(lang, "error_date"))
@@ -1200,7 +1192,7 @@ async def bt_tf(msg: Message, state: FSMContext):
     await state.update_data(timeframe=msg.text.upper())
     await state.set_state(BacktestForm.asset)
     lang = get_user_lang(msg.from_user.id)
-    await msg.answer(get_text(lang, "enter_asset"), reply_markup=back_kb(lang))
+    await msg.answer(get_text(lang, "enter_asset"), reply_markup=back_kb())
 
 @dp.message(BacktestForm.asset)
 async def bt_asset(msg: Message, state: FSMContext):
@@ -1215,7 +1207,7 @@ async def bt_direction(call: CallbackQuery, state: FSMContext):
     await state.update_data(direction=direction)
     await state.set_state(BacktestForm.entry_price)
     lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "enter_entry_price"), reply_markup=back_kb(lang))
+    await call.message.edit_text(get_text(lang, "enter_entry_price"), parse_mode="Markdown", reply_markup=back_kb())
     await call.answer()
 
 @dp.message(BacktestForm.entry_price)
@@ -1224,7 +1216,7 @@ async def bt_entry(msg: Message, state: FSMContext):
         await state.update_data(entry_price=float(msg.text.replace(",", ".")))
         await state.set_state(BacktestForm.exit_price)
         lang = get_user_lang(msg.from_user.id)
-        await msg.answer(get_text(lang, "enter_exit_price_bt"), reply_markup=back_kb(lang))
+        await msg.answer(get_text(lang, "enter_exit_price_bt"), reply_markup=back_kb())
     except:
         lang = get_user_lang(msg.from_user.id)
         await msg.answer(get_text(lang, "error_number"))
@@ -1236,7 +1228,7 @@ async def bt_exit(msg: Message, state: FSMContext):
         await state.update_data(exit_price=exit_p)
         await state.set_state(BacktestForm.link_chart)
         lang = get_user_lang(msg.from_user.id)
-        await msg.answer(get_text(lang, "enter_link_bt"), reply_markup=back_kb(lang))
+        await msg.answer(get_text(lang, "enter_link_bt"), reply_markup=back_kb())
     except:
         lang = get_user_lang(msg.from_user.id)
         await msg.answer(get_text(lang, "error_number"))
@@ -1278,7 +1270,7 @@ async def cmd_new(msg: Message, state: FSMContext):
     await state.clear()
     await state.set_state(RealTradeForm.asset)
     lang = get_user_lang(msg.from_user.id)
-    await msg.answer(get_text(lang, "enter_asset"), reply_markup=back_kb(lang))
+    await msg.answer(get_text(lang, "enter_asset"), reply_markup=back_kb())
 
 @dp.message(Command("stats"))
 async def cmd_stats(msg: Message):
@@ -1337,7 +1329,7 @@ async def cmd_get_real(msg: Message):
         await msg.answer(get_text(lang, "no_data_add_trade"))
         return
     fname = export_real_to_excel(df, uid)
-    await msg.answer_document(document=FSInputFile(fname), caption=get_text(lang, "excel_ready"))
+    await msg.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт")
     os.remove(fname)
 
 @dp.message(Command("get_backtest"))
@@ -1349,37 +1341,21 @@ async def cmd_get_backtest(msg: Message):
         await msg.answer(get_text(lang, "no_data_add_trade"))
         return
     fname = export_backtest_to_excel(df, uid)
-    await msg.answer_document(document=FSInputFile(fname), caption=get_text(lang, "excel_ready"))
+    await msg.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт")
     os.remove(fname)
 
-# ========== ВЕБ-СЕРВЕР ДЛЯ RENDER ==========
-async def health_check(request):
-    return web.Response(text="Bot is alive!")
-
-async def run_web_server():
-    app = web.Application()
-    app.router.add_get('/', health_check)
-    app.router.add_get('/health', health_check)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    port = int(os.environ.get("PORT", 10000))
-    site = web.TCPSite(runner, '0.0.0.0', port)
-    await site.start()
-    print(f"🌐 Web server started on port {port}")
-    # Keep the server running
-    await asyncio.Event().wait()
-
+# ========== ЗАПУСК ==========
 async def set_commands(bot: Bot):
     await bot.set_my_commands([
-        BotCommand(command="start", description="Main menu"),
-        BotCommand(command="new", description="➕ New trade"),
-        BotCommand(command="stats", description="📊 All statistics"),
-        BotCommand(command="day", description="📆 Today's statistics"),
-        BotCommand(command="week", description="📅 Weekly statistics"),
-        BotCommand(command="month", description="📊 Monthly statistics"),
-        BotCommand(command="clear", description="🗑 Clear journal"),
-        BotCommand(command="get_real", description="📎 Excel (Real trading)"),
-        BotCommand(command="get_backtest", description="📎 Excel (Backtest)"),
+        BotCommand(command="start", description="Главное меню"),
+        BotCommand(command="new", description="➕ Новая сделка"),
+        BotCommand(command="stats", description="📊 Вся статистика"),
+        BotCommand(command="day", description="📆 Статистика за сегодня"),
+        BotCommand(command="week", description="📅 Статистика за неделю"),
+        BotCommand(command="month", description="📊 Статистика за месяц"),
+        BotCommand(command="clear", description="🗑 Очистить журнал"),
+        BotCommand(command="get_real", description="📎 Excel (реальная торговля)"),
+        BotCommand(command="get_backtest", description="📎 Excel (бэктест)"),
     ])
 
 async def main():
@@ -1387,12 +1363,8 @@ async def main():
     init_dbs()
     bot = Bot(token=BOT_TOKEN)
     await set_commands(bot)
-    print("✅ Bot started successfully!")
-    # Run web server and bot together
-    await asyncio.gather(
-        run_web_server(),
-        dp.start_polling(bot)
-    )
+    print("✅ Бот успешно запущен!")
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
