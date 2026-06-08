@@ -132,7 +132,16 @@ TEXTS = {
         "select_period": "📅 **Выберите период:**",
         "period_day": "📆 День",
         "period_week": "📅 Неделя",
-        "period_month": "📊 Месяц"
+        "period_month": "📊 Месяц",
+        "bt_commission": "💸 Комиссия в % (0.1):",
+        "bt_spread": "📊 Спред в пунктах (1.5):",
+        "enter_sl": "🛑 Введите цену Stop-Loss:",
+        "enter_tp": "🎯 Введите цену Take-Profit (0 если нет):",
+        "enter_entry_time": "⏰ Время входа (ЧЧ:ММ):",
+        "enter_exit_time": "⏰ Время выхода (ЧЧ:ММ):",
+        "enter_setup": "🎯 Название сетапа (стратегии):",
+        "enter_trigger": "⚡ Триггер (сигнал):",
+        "enter_quality": "⭐ Оцените качество сигнала (1-5):"
     },
     "en": {
         "select_mode": "🎛 **Select mode:**",
@@ -246,7 +255,16 @@ TEXTS = {
         "select_period": "📅 **Select period:**",
         "period_day": "📆 Day",
         "period_week": "📅 Week",
-        "period_month": "📊 Month"
+        "period_month": "📊 Month",
+        "bt_commission": "💸 Commission % (0.1):",
+        "bt_spread": "📊 Spread in points (1.5):",
+        "enter_sl": "🛑 Enter Stop-Loss price:",
+        "enter_tp": "🎯 Enter Take-Profit price (0 if none):",
+        "enter_entry_time": "⏰ Entry time (HH:MM):",
+        "enter_exit_time": "⏰ Exit time (HH:MM):",
+        "enter_setup": "🎯 Setup name (strategy):",
+        "enter_trigger": "⚡ Trigger (signal):",
+        "enter_quality": "⭐ Rate signal quality (1-5):"
     }
 }
 
@@ -390,6 +408,24 @@ def get_all_assets(user_id):
 def clear_trades(user_id):
     conn = sqlite3.connect(DB_NAME)
     conn.execute("DELETE FROM trades WHERE user_id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+
+def save_backtest(data):
+    conn = sqlite3.connect(BT_DB_NAME)
+    conn.execute("""
+        INSERT INTO backtests (
+            user_id, period_start, period_end, timeframe, commission, spread,
+            asset, direction, entry_price, exit_price, sl_price, tp_price,
+            pnl_usd, pnl_r, signal_quality, setup, trigger, link_chart, entry_time, exit_time
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        data['user_id'], data['period_start'], data['period_end'], data['timeframe'],
+        data['commission'], data['spread'], data['asset'], data['direction'],
+        data['entry_price'], data['exit_price'], data['sl_price'], data['tp_price'],
+        data['pnl_usd'], data['pnl_r'], data['signal_quality'],
+        data['setup'], data['trigger'], data['link_chart'], data['entry_time'], data['exit_time']
+    ))
     conn.commit()
     conn.close()
 
@@ -556,9 +592,9 @@ def real_menu_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=get_text(lang, "add_trade"), callback_data="real_add_trade")],
         [InlineKeyboardButton(text=get_text(lang, "list_trades"), callback_data="real_list_trades")],
-        [InlineKeyboardButton(text=get_text(lang, "stats"), callback_data="stats_menu")],
-        [InlineKeyboardButton(text=get_text(lang, "excel_real"), callback_data="get_real_excel")],
-        [InlineKeyboardButton(text=get_text(lang, "clear"), callback_data="clear_confirm")],
+        [InlineKeyboardButton(text=get_text(lang, "stats"), callback_data="real_stats")],
+        [InlineKeyboardButton(text=get_text(lang, "excel_real"), callback_data="real_excel")],
+        [InlineKeyboardButton(text=get_text(lang, "clear"), callback_data="real_clear")],
         [InlineKeyboardButton(text=get_text(lang, "settings"), callback_data="settings_menu")],
         [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
     ])
@@ -567,9 +603,9 @@ def backtest_menu_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=get_text(lang, "add_trade"), callback_data="backtest_add_trade")],
         [InlineKeyboardButton(text=get_text(lang, "list_trades"), callback_data="backtest_list_trades")],
-        [InlineKeyboardButton(text=get_text(lang, "stats"), callback_data="stats_menu")],
-        [InlineKeyboardButton(text=get_text(lang, "excel_backtest"), callback_data="get_backtest_excel")],
-        [InlineKeyboardButton(text=get_text(lang, "clear"), callback_data="clear_confirm")],
+        [InlineKeyboardButton(text=get_text(lang, "stats"), callback_data="backtest_stats")],
+        [InlineKeyboardButton(text=get_text(lang, "excel_backtest"), callback_data="backtest_excel")],
+        [InlineKeyboardButton(text=get_text(lang, "clear"), callback_data="backtest_clear")],
         [InlineKeyboardButton(text=get_text(lang, "settings"), callback_data="settings_menu")],
         [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
     ])
@@ -670,7 +706,7 @@ def sort_menu_kb(lang, current_sort):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=f"{'✅ ' if current_sort == 'DESC' else ''}{get_text(lang, 'sort_newest')}", callback_data="sort_newest")],
         [InlineKeyboardButton(text=f"{'✅ ' if current_sort == 'ASC' else ''}{get_text(lang, 'sort_oldest')}", callback_data="sort_oldest")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="list_trades")]
+        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="real_list_trades")]
     ])
 
 def filter_menu_kb(lang, result_filter, asset_filter, date_filter, assets):
@@ -682,7 +718,7 @@ def filter_menu_kb(lang, result_filter, asset_filter, date_filter, assets):
         [InlineKeyboardButton(text=get_text(lang, "filter_asset"), callback_data="filter_asset_menu")],
         [InlineKeyboardButton(text=get_text(lang, "filter_date"), callback_data="filter_date_menu")],
         [InlineKeyboardButton(text=get_text(lang, "filter_clear"), callback_data="filter_clear")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="list_trades")]
+        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="real_list_trades")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -1294,130 +1330,28 @@ async def edit_text_value(msg: Message, state: FSMContext):
     await state.clear()
     await msg.answer("✅ Редактирование завершено", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back_to_list"), callback_data="real_list_trades")]]))
 
-# ---------- СТАТИСТИКА МЕНЮ ----------
-@dp.callback_query(F.data == "stats_menu")
-async def stats_menu(call: CallbackQuery):
-    lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "stats_menu"), parse_mode="Markdown", reply_markup=stats_menu_kb(lang))
-    await call.answer()
-
-@dp.callback_query(F.data == "stats_all")
-async def stats_all(call: CallbackQuery):
+# ---------- СТАТИСТИКА ----------
+@dp.callback_query(F.data == "real_stats")
+async def real_stats(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
     df = get_trades_filtered(uid)
     text = get_real_stats_text(df, lang, "stats_header")
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=stats_menu_kb(lang))
+    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="mode_real")]]))
     await call.answer()
 
-@dp.callback_query(F.data == "stats_by_asset")
-async def stats_by_asset(call: CallbackQuery):
+@dp.callback_query(F.data == "backtest_stats")
+async def backtest_stats(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
-    assets = get_all_assets(uid)
-    if not assets:
-        await call.answer(get_text(lang, "no_data"), show_alert=True)
-        return
-    buttons = [[InlineKeyboardButton(text=a, callback_data=f"stats_asset_{a}")] for a in assets]
-    buttons.append([InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")])
-    await call.message.edit_text(get_text(lang, "select_asset"), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    df = get_backtests(uid)
+    text = get_backtest_stats_text(df, lang)
+    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="mode_backtest")]]))
     await call.answer()
-
-@dp.callback_query(F.data.startswith("stats_asset_"))
-async def show_asset_stats(call: CallbackQuery):
-    asset = call.data.split("_")[2]
-    uid = call.from_user.id
-    lang = get_user_lang(uid)
-    df = get_trades_filtered(uid, asset_filter=asset)
-    text = get_real_stats_text(df, lang, f"📊 Статистика по {asset}")
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=stats_menu_kb(lang))
-    await call.answer()
-
-@dp.callback_query(F.data == "stats_by_date")
-async def stats_by_date(call: CallbackQuery):
-    lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "select_period"), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "period_day"), callback_data="stats_date_day")],
-        [InlineKeyboardButton(text=get_text(lang, "period_week"), callback_data="stats_date_week")],
-        [InlineKeyboardButton(text=get_text(lang, "period_month"), callback_data="stats_date_month")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")]
-    ]))
-    await call.answer()
-
-@dp.callback_query(F.data.startswith("stats_date_"))
-async def show_date_stats(call: CallbackQuery):
-    date_filter = call.data.split("_")[2]
-    uid = call.from_user.id
-    lang = get_user_lang(uid)
-    days = {"day": 1, "week": 7, "month": 30}
-    start = (datetime.now() - timedelta(days=days[date_filter])).strftime("%Y-%m-%d")
-    df = get_trades_filtered(uid, date_filter=date_filter)
-    titles = {"day": "За сегодня", "week": "За неделю", "month": "За месяц"}
-    text = get_real_stats_text(df, lang, titles.get(date_filter, "Статистика"))
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=stats_menu_kb(lang))
-    await call.answer()
-
-@dp.callback_query(F.data == "stats_by_emotion")
-async def stats_by_emotion(call: CallbackQuery):
-    uid = call.from_user.id
-    lang = get_user_lang(uid)
-    emotions = ['😊 Спокойствие', '😨 Страх', '😈 Жадность', '🤬 Тильт', '😌 Уверенность']
-    df = get_trades_filtered(uid)
-    text = "😊 **Статистика по эмоциям:**\n\n"
-    for e in emotions:
-        sub = df[df['emotion'] == e]
-        if not sub.empty:
-            total = len(sub)
-            wins = len(sub[sub['pnl'] > 0])
-            wr = wins/total*100 if total else 0
-            avg = sub['pnl'].mean()
-            text += f"{e}: {total} сделок, винрейт {wr:.0f}%, средний ${avg:.0f}\n"
-        else:
-            text += f"{e}: 0 сделок\n"
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=stats_menu_kb(lang))
-    await call.answer()
-
-@dp.callback_query(F.data == "stats_recent")
-async def stats_recent(call: CallbackQuery):
-    uid = call.from_user.id
-    lang = get_user_lang(uid)
-    df = get_trades_filtered(uid, sort_order="DESC")
-    if df.empty:
-        await call.answer(get_text(lang, "no_data"), show_alert=True)
-        return
-    df = df.head(10)
-    text = get_text(lang, "recent_trades", count=len(df)) + "\n\n"
-    for _, row in df.iterrows():
-        pnl = row['pnl']
-        emoji = "✅" if pnl > 0 else ("❌" if pnl < 0 else "⚖️")
-        pnl_text = f"+${pnl:.0f}" if pnl > 0 else (f"${pnl:.0f}" if pnl < 0 else "БУ")
-        text += f"{emoji} #{row['id']} {row['asset']} | {row['direction']} | {pnl_text} | {row['trade_date']}\n"
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=stats_menu_kb(lang))
-    await call.answer()
-
-@dp.callback_query(F.data == "stats_sort")
-async def stats_sort(call: CallbackQuery):
-    lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "stats_sort"), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "sort_newest"), callback_data="sort_newest_stats")],
-        [InlineKeyboardButton(text=get_text(lang, "sort_oldest"), callback_data="sort_oldest_stats")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")]
-    ]))
-    await call.answer()
-
-@dp.callback_query(F.data == "sort_newest_stats")
-async def sort_newest_stats(call: CallbackQuery, state: FSMContext):
-    await state.update_data(sort_order="DESC")
-    await stats_all(call)
-
-@dp.callback_query(F.data == "sort_oldest_stats")
-async def sort_oldest_stats(call: CallbackQuery, state: FSMContext):
-    await state.update_data(sort_order="ASC")
-    await stats_all(call)
 
 # ---------- EXCEL ----------
-@dp.callback_query(F.data == "get_real_excel")
-async def get_real_excel(call: CallbackQuery):
+@dp.callback_query(F.data == "real_excel")
+async def real_excel(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
     df = get_trades_filtered(uid)
@@ -1432,8 +1366,8 @@ async def get_real_excel(call: CallbackQuery):
             os.remove(fname)
     await call.answer()
 
-@dp.callback_query(F.data == "get_backtest_excel")
-async def get_backtest_excel(call: CallbackQuery):
+@dp.callback_query(F.data == "backtest_excel")
+async def backtest_excel(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
     df = get_backtests(uid)
@@ -1449,10 +1383,16 @@ async def get_backtest_excel(call: CallbackQuery):
     await call.answer()
 
 # ---------- ОЧИСТКА ----------
-@dp.callback_query(F.data == "clear_confirm")
-async def clear_confirm(call: CallbackQuery):
+@dp.callback_query(F.data == "real_clear")
+async def real_clear_confirm(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
     await call.message.edit_text("⚠️ Удалить все сделки реальной торговли?", reply_markup=confirm_kb(lang))
+    await call.answer()
+
+@dp.callback_query(F.data == "backtest_clear")
+async def backtest_clear_confirm(call: CallbackQuery):
+    lang = get_user_lang(call.from_user.id)
+    await call.message.edit_text("⚠️ Удалить все бэктесты?", reply_markup=confirm_kb(lang))
     await call.answer()
 
 @dp.callback_query(F.data == "clear_yes")
@@ -1707,6 +1647,7 @@ async def cmd_stats(msg: Message):
 async def cmd_day(msg: Message):
     uid = msg.from_user.id
     lang = get_user_lang(uid)
+    today = datetime.now().strftime("%Y-%m-%d")
     df = get_trades_filtered(uid, date_filter="day")
     if df.empty:
         await msg.answer(get_text(lang, "no_data_add_trade"))
@@ -1718,6 +1659,7 @@ async def cmd_day(msg: Message):
 async def cmd_week(msg: Message):
     uid = msg.from_user.id
     lang = get_user_lang(uid)
+    week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
     df = get_trades_filtered(uid, date_filter="week")
     if df.empty:
         await msg.answer(get_text(lang, "no_data_add_trade"))
@@ -1729,6 +1671,7 @@ async def cmd_week(msg: Message):
 async def cmd_month(msg: Message):
     uid = msg.from_user.id
     lang = get_user_lang(uid)
+    month_ago = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
     df = get_trades_filtered(uid, date_filter="month")
     if df.empty:
         await msg.answer(get_text(lang, "no_data_add_trade"))
@@ -1786,7 +1729,7 @@ async def main():
     init_dbs()
     bot = Bot(token=BOT_TOKEN)
     await set_commands(bot)
-    print("✅ Бот успешно запущен! Все функции восстановлены.")
+    print("✅ Бот успешно запущен! Все функции исправлены.")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
