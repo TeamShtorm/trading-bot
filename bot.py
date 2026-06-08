@@ -702,7 +702,7 @@ class BacktestForm(StatesGroup):
 router = Router()
 bot = None
 
-# ========== СТАРТ ==========
+# ========== СТАРТ И ОСНОВНЫЕ ОБРАБОТЧИКИ ==========
 @router.message(CommandStart())
 async def start_cmd(msg: Message, state: FSMContext):
     await state.clear()
@@ -717,7 +717,6 @@ async def settings_cmd(msg: Message, state: FSMContext):
     lang = get_user_lang(uid)
     await msg.answer(get_text(lang, "settings_menu"), parse_mode="Markdown", reply_markup=settings_kb(lang))
 
-# ========== НАСТРОЙКИ ==========
 @router.callback_query(F.data == "settings_menu")
 async def settings(call: CallbackQuery, state: FSMContext):
     await state.clear()
@@ -741,7 +740,12 @@ async def set_lang(call: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "support")
 async def support(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "support_info"), parse_mode="Markdown", reply_markup=mode_menu_kb(lang, "real"))
+    text = get_text(lang, "support_info")
+    await call.message.edit_text(
+        text,
+        parse_mode="Markdown",
+        reply_markup=mode_kb(lang)
+    )
     await call.answer()
 
 @router.callback_query(F.data == "back_mode")
