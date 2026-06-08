@@ -24,10 +24,7 @@ TEXTS = {
         "mode_real": "📊 Real Trading",
         "mode_backtest": "🔄 Backtest",
         "add_trade": "➕ Add Trade",
-        "stats_all": "📈 All Stats",
-        "stats_day": "📆 Day",
-        "stats_week": "📅 Week",
-        "stats_month": "📊 Month",
+        "stats": "📊 Statistics",
         "excel": "📎 Excel",
         "clear": "🗑 Clear",
         "settings": "⚙️ Settings",
@@ -54,6 +51,7 @@ TEXTS = {
         "link_saved": "✅ Link saved! Add another?",
         "enter_date": "📅 Enter date (DD.MM.YYYY) or 'today':",
         "trade_saved": "✅ Trade saved!",
+        "enter_emotion": "😊 What emotion did you feel? (calm/fear/greed/tilt/confidence):",
         "bt_period_start": "📅 Enter START date (DD.MM.YYYY):",
         "bt_period_end": "📅 Enter END date (DD.MM.YYYY):",
         "bt_timeframe": "⏱ Enter timeframe (M5, H1, H4, D1, W1):",
@@ -77,10 +75,15 @@ TEXTS = {
         "change_lang": "🌐 Change language",
         "support": "📞 Support",
         "settings_menu": "⚙️ **Settings**",
+        "stats_menu": "📊 **Statistics Menu**\n\nSelect statistic type:",
+        "stats_all": "📈 All Statistics",
+        "stats_by_asset": "💰 By Asset",
+        "stats_by_date": "📅 By Date",
+        "stats_by_emotion": "😊 By Emotion",
+        "stats_recent": "🕒 Recent Trades",
+        "stats_sort": "🔄 Sort (Newest/Oldest)",
+        "stats_back": "🔙 Back to Mode Menu",
         "stats_header": "📊 Your statistics",
-        "stats_today": "📆 Today's statistics",
-        "stats_week": "📅 Weekly statistics",
-        "stats_month": "📊 Monthly statistics",
         "total_trades": "📋 Total trades: {total}",
         "wins": "✅ Winning: {wins}",
         "losses": "❌ Losing: {losses}",
@@ -98,17 +101,29 @@ TEXTS = {
         "bt_winrate": "🎯 Win rate: {wr:.1f}%",
         "bt_avg_r": "📊 Avg R: {avg_r:.2f}",
         "bt_total_r": "💰 Total R: {total_r:.2f}",
-        "bt_quality": "⭐ Signal quality: {q:.1f}/5"
+        "bt_quality": "⭐ Signal quality: {q:.1f}/5",
+        "select_asset": "💰 **Select asset:**",
+        "select_period": "📅 **Select period:**",
+        "period_day": "📆 Day",
+        "period_week": "📅 Week",
+        "period_month": "📊 Month",
+        "emotion_calm": "😊 Calm",
+        "emotion_fear": "😨 Fear",
+        "emotion_greed": "😈 Greed",
+        "emotion_tilt": "🤬 Tilt",
+        "emotion_confidence": "😌 Confidence",
+        "trade_detail": "📋 **Trade #{id}**\n\nAsset: {asset}\nDirection: {direction}\nEntry: ${entry}\nExit: ${exit}\nVolume: {volume}\nP&L: ${pnl}\nOutcome: {result}\nDate: {date}\nLinks:\n{links}",
+        "recent_trades": "🕒 **Recent trades** (last {count}):",
+        "sort_newest": "📅 Newest first",
+        "sort_oldest": "📅 Oldest first",
+        "bt_trade_detail": "📋 **Backtest #{id}**\n\nAsset: {asset}\nDirection: {direction}\nEntry: ${entry}\nExit: ${exit}\nP&L: ${pnl} ({r:.2f}R)\nQuality: {quality}/5\nSetup: {setup}\nTrigger: {trigger}\nDate: {date}"
     },
     "ru": {
         "select_mode": "🎛 **Выберите режим работы:**",
         "mode_real": "📊 Реальная торговля",
         "mode_backtest": "🔄 Бэктест",
         "add_trade": "➕ Сделка",
-        "stats_all": "📈 Вся статистика",
-        "stats_day": "📆 День",
-        "stats_week": "📅 Неделя",
-        "stats_month": "📊 Месяц",
+        "stats": "📊 Статистика",
         "excel": "📎 Excel",
         "clear": "🗑 Очистить",
         "settings": "⚙️ Настройки",
@@ -135,6 +150,7 @@ TEXTS = {
         "link_saved": "✅ Ссылка сохранена! Добавить ещё?",
         "enter_date": "📅 Введите дату (ДД.ММ.ГГГГ) или 'сегодня':",
         "trade_saved": "✅ Сделка сохранена!",
+        "enter_emotion": "😊 Какие эмоции были? (calm/fear/greed/tilt/confidence):",
         "bt_period_start": "📅 Введите НАЧАЛО периода (ДД.ММ.ГГГГ):",
         "bt_period_end": "📅 Введите КОНЕЦ периода (ДД.ММ.ГГГГ):",
         "bt_timeframe": "⏱ Введите таймфрейм (M5, H1, H4, D1, W1):",
@@ -158,10 +174,15 @@ TEXTS = {
         "change_lang": "🌐 Сменить язык",
         "support": "📞 Поддержка",
         "settings_menu": "⚙️ **Настройки**",
+        "stats_menu": "📊 **Меню статистики**\n\nВыберите тип статистики:",
+        "stats_all": "📈 Вся статистика",
+        "stats_by_asset": "💰 По активам",
+        "stats_by_date": "📅 По дате",
+        "stats_by_emotion": "😊 По эмоциям",
+        "stats_recent": "🕒 Недавние сделки",
+        "stats_sort": "🔄 Сортировка (Новые/Старые)",
+        "stats_back": "🔙 Назад в меню режима",
         "stats_header": "📊 Ваша статистика",
-        "stats_today": "📆 Статистика за сегодня",
-        "stats_week": "📅 Статистика за неделю",
-        "stats_month": "📊 Статистика за месяц",
         "total_trades": "📋 Всего сделок: {total}",
         "wins": "✅ Прибыльных: {wins}",
         "losses": "❌ Убыточных: {losses}",
@@ -179,7 +200,22 @@ TEXTS = {
         "bt_winrate": "🎯 Винрейт: {wr:.1f}%",
         "bt_avg_r": "📊 Средний R: {avg_r:.2f}",
         "bt_total_r": "💰 Суммарный R: {total_r:.2f}",
-        "bt_quality": "⭐ Качество сигнала: {q:.1f}/5"
+        "bt_quality": "⭐ Качество сигнала: {q:.1f}/5",
+        "select_asset": "💰 **Выберите актив:**",
+        "select_period": "📅 **Выберите период:**",
+        "period_day": "📆 День",
+        "period_week": "📅 Неделя",
+        "period_month": "📊 Месяц",
+        "emotion_calm": "😊 Спокойствие",
+        "emotion_fear": "😨 Страх",
+        "emotion_greed": "😈 Жадность",
+        "emotion_tilt": "🤬 Тильт",
+        "emotion_confidence": "😌 Уверенность",
+        "trade_detail": "📋 **Сделка #{id}**\n\nАктив: {asset}\nНаправление: {direction}\nВход: ${entry}\nВыход: ${exit}\nОбъём: {volume}\nP&L: ${pnl}\nИсход: {result}\nДата: {date}\nСсылки:\n{links}",
+        "recent_trades": "🕒 **Недавние сделки** (последние {count}):",
+        "sort_newest": "📅 Сначала новые",
+        "sort_oldest": "📅 Сначала старые",
+        "bt_trade_detail": "📋 **Бэктест #{id}**\n\nАктив: {asset}\nНаправление: {direction}\nВход: ${entry}\nВыход: ${exit}\nP&L: ${pnl} ({r:.2f}R)\nКачество: {quality}/5\nСетап: {setup}\nТриггер: {trigger}\nДата: {date}"
     }
 }
 
@@ -197,7 +233,7 @@ def init_dbs():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER, mode TEXT, asset TEXT, direction TEXT,
             entry_price REAL, exit_price REAL, volume REAL, pnl REAL,
-            result TEXT, comment TEXT, trade_date TEXT, links TEXT
+            result TEXT, comment TEXT, trade_date TEXT, links TEXT, emotion TEXT
         )
     """)
     conn.close()
@@ -232,16 +268,16 @@ def set_user_lang(user_id, lang):
     conn.commit()
     conn.close()
 
-def save_trade(user_id, mode, asset, direction, entry_price, exit_price, volume, pnl, result, comment, trade_date, links):
+def save_trade(user_id, mode, asset, direction, entry_price, exit_price, volume, pnl, result, comment, trade_date, links, emotion=""):
     conn = sqlite3.connect(DB_NAME)
     conn.execute("""
-        INSERT INTO trades (user_id, mode, asset, direction, entry_price, exit_price, volume, pnl, result, comment, trade_date, links)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (user_id, mode, asset, direction, entry_price, exit_price, volume, pnl, result, comment, trade_date, links))
+        INSERT INTO trades (user_id, mode, asset, direction, entry_price, exit_price, volume, pnl, result, comment, trade_date, links, emotion)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (user_id, mode, asset, direction, entry_price, exit_price, volume, pnl, result, comment, trade_date, links, emotion))
     conn.commit()
     conn.close()
 
-def get_trades(user_id, mode=None, start_date=None):
+def get_trades(user_id, mode=None, start_date=None, asset=None, sort_by_date="DESC", limit=None):
     conn = sqlite3.connect(DB_NAME)
     q = "SELECT * FROM trades WHERE user_id = ?"
     p = [user_id]
@@ -251,9 +287,34 @@ def get_trades(user_id, mode=None, start_date=None):
     if start_date:
         q += " AND trade_date >= ?"
         p.append(start_date)
+    if asset:
+        q += " AND asset = ?"
+        p.append(asset)
+    q += f" ORDER BY trade_date {sort_by_date}"
+    if limit:
+        q += f" LIMIT {limit}"
     df = pd.read_sql_query(q, conn, params=p)
     conn.close()
     return df
+
+def get_trade_by_id(trade_id, user_id):
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM trades WHERE id = ? AND user_id = ?", (trade_id, user_id))
+    row = cur.fetchone()
+    conn.close()
+    if row:
+        cols = ['id', 'user_id', 'mode', 'asset', 'direction', 'entry_price', 'exit_price', 'volume', 'pnl', 'result', 'comment', 'trade_date', 'links', 'emotion']
+        return dict(zip(cols, row))
+    return None
+
+def get_all_assets(user_id, mode):
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    cur.execute("SELECT DISTINCT asset FROM trades WHERE user_id = ? AND mode = ?", (user_id, mode))
+    assets = [row[0] for row in cur.fetchall()]
+    conn.close()
+    return assets
 
 def clear_trades(user_id, mode=None):
     conn = sqlite3.connect(DB_NAME)
@@ -284,11 +345,35 @@ def save_backtest(data):
     conn.commit()
     conn.close()
 
-def get_backtests(user_id):
+def get_backtests(user_id, limit=None):
     conn = sqlite3.connect(BT_DB_NAME)
-    df = pd.read_sql_query("SELECT * FROM backtests WHERE user_id = ?", conn, params=(user_id,))
+    q = "SELECT * FROM backtests WHERE user_id = ? ORDER BY period_start DESC"
+    p = [user_id]
+    if limit:
+        q += f" LIMIT {limit}"
+    df = pd.read_sql_query(q, conn, params=p)
     conn.close()
     return df
+
+def get_backtest_by_id(bt_id, user_id):
+    conn = sqlite3.connect(BT_DB_NAME)
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM backtests WHERE id = ? AND user_id = ?", (bt_id, user_id))
+    row = cur.fetchone()
+    conn.close()
+    if row:
+        cols = ['id', 'user_id', 'period_start', 'period_end', 'timeframe', 'commission', 'spread', 'asset', 'direction',
+                'entry_price', 'exit_price', 'sl_price', 'tp_price', 'pnl_usd', 'pnl_r', 'signal_quality', 'setup', 'trigger', 'link_chart', 'entry_time', 'exit_time']
+        return dict(zip(cols, row))
+    return None
+
+def get_backtest_assets(user_id):
+    conn = sqlite3.connect(BT_DB_NAME)
+    cur = conn.cursor()
+    cur.execute("SELECT DISTINCT asset FROM backtests WHERE user_id = ?", (user_id,))
+    assets = [row[0] for row in cur.fetchall()]
+    conn.close()
+    return assets
 
 def clear_backtests(user_id):
     conn = sqlite3.connect(BT_DB_NAME)
@@ -302,9 +387,9 @@ def export_real_to_excel(df, user_id):
         return None
     df_exp = df.copy()
     df_exp = df_exp[[
-        'trade_date', 'asset', 'direction', 'entry_price', 'exit_price', 'volume', 'pnl', 'result', 'comment', 'links'
+        'trade_date', 'asset', 'direction', 'entry_price', 'exit_price', 'volume', 'pnl', 'result', 'comment', 'links', 'emotion'
     ]]
-    df_exp.columns = ['📅 Date', '🪙 Asset', '📈 Direction', '💰 Entry', '💰 Exit', '📊 Volume', '💵 P&L', '🎯 Outcome', '📝 Comment', '🔗 Links']
+    df_exp.columns = ['📅 Date', '🪙 Asset', '📈 Direction', '💰 Entry', '💰 Exit', '📊 Volume', '💵 P&L', '🎯 Outcome', '📝 Comment', '🔗 Links', '😊 Emotion']
     df_exp['📈 Direction'] = df_exp['📈 Direction'].replace({'LONG': '🟢 LONG', 'SHORT': '🔴 SHORT'})
     df_exp['🎯 Outcome'] = df_exp['🎯 Outcome'].replace({'TAKE': '✅ Take', 'STOP': '❌ Stop'})
     df_exp = df_exp.sort_values('📅 Date', ascending=False)
@@ -399,6 +484,9 @@ def get_real_stats_text(df, lang, title_key="stats_header"):
     sum_profit = df[df['pnl']>0]['pnl'].sum()
     sum_loss = abs(df[df['pnl']<0]['pnl'].sum())
     pf = sum_profit/sum_loss if sum_loss else sum_profit
+    # Статистика по эмоциям
+    emotions = df['emotion'].value_counts().to_dict()
+    emotion_text = "\n".join([f"{e}: {c}" for e, c in emotions.items()]) if emotions else get_text(lang, "no_data")
     return (
         f"{get_text(lang, title_key)}\n\n"
         f"{get_text(lang, 'total_trades', total=total)}\n"
@@ -410,7 +498,8 @@ def get_real_stats_text(df, lang, title_key="stats_header"):
         f"{get_text(lang, 'avg_pnl', avg_pnl=avg_pnl)}\n"
         f"{get_text(lang, 'best', best=best)}\n"
         f"{get_text(lang, 'worst', worst=worst)}\n"
-        f"{get_text(lang, 'pf', pf=pf)}"
+        f"{get_text(lang, 'pf', pf=pf)}\n\n"
+        f"😊 **Emotions:**\n{emotion_text}"
     )
 
 def get_backtest_stats_text(df, lang):
@@ -442,43 +531,86 @@ def mode_kb(lang):
         [InlineKeyboardButton(text=get_text(lang, "settings"), callback_data="settings_menu")]
     ])
 
-def main_menu_kb(lang, mode):
+def mode_menu_kb(lang, mode):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=get_text(lang, "add_trade"), callback_data="add_trade")],
-        [InlineKeyboardButton(text=get_text(lang, "stats_all"), callback_data="stats_all"),
-         InlineKeyboardButton(text=get_text(lang, "stats_day"), callback_data="stats_day"),
-         InlineKeyboardButton(text=get_text(lang, "stats_week"), callback_data="stats_week"),
-         InlineKeyboardButton(text=get_text(lang, "stats_month"), callback_data="stats_month")],
-        [InlineKeyboardButton(text=get_text(lang, "excel"), callback_data="get_excel"),
-         InlineKeyboardButton(text=get_text(lang, "clear"), callback_data="clear_confirm"),
-         InlineKeyboardButton(text=get_text(lang, "settings"), callback_data="settings_menu")],
+        [InlineKeyboardButton(text=get_text(lang, "stats"), callback_data="stats_menu")],
+        [InlineKeyboardButton(text=get_text(lang, "excel"), callback_data="get_excel")],
+        [InlineKeyboardButton(text=get_text(lang, "clear"), callback_data="clear_confirm")],
         [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
     ])
 
-def direction_kb(lang):
+def stats_menu_kb(lang):
+    buttons = [
+        [InlineKeyboardButton(text=get_text(lang, "stats_all"), callback_data="stats_all")],
+        [InlineKeyboardButton(text=get_text(lang, "stats_by_asset"), callback_data="stats_by_asset")],
+        [InlineKeyboardButton(text=get_text(lang, "stats_by_date"), callback_data="stats_by_date")],
+        [InlineKeyboardButton(text=get_text(lang, "stats_recent"), callback_data="stats_recent")],
+        [InlineKeyboardButton(text=get_text(lang, "stats_sort"), callback_data="stats_sort")],
+    ]
+    # Добавляем эмоции только для реальной торговли (определим позже)
+    return InlineKeyboardMarkup(inline_keyboard=buttons + [[InlineKeyboardButton(text=get_text(lang, "stats_back"), callback_data="back_to_mode_menu")]])
+
+def stats_menu_kb_with_emotions(lang):
+    buttons = [
+        [InlineKeyboardButton(text=get_text(lang, "stats_all"), callback_data="stats_all")],
+        [InlineKeyboardButton(text=get_text(lang, "stats_by_asset"), callback_data="stats_by_asset")],
+        [InlineKeyboardButton(text=get_text(lang, "stats_by_date"), callback_data="stats_by_date")],
+        [InlineKeyboardButton(text=get_text(lang, "stats_by_emotion"), callback_data="stats_by_emotion")],
+        [InlineKeyboardButton(text=get_text(lang, "stats_recent"), callback_data="stats_recent")],
+        [InlineKeyboardButton(text=get_text(lang, "stats_sort"), callback_data="stats_sort")],
+        [InlineKeyboardButton(text=get_text(lang, "stats_back"), callback_data="back_to_mode_menu")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def asset_kb(assets, lang):
+    buttons = [[InlineKeyboardButton(text=a, callback_data=f"asset_{a}")] for a in assets]
+    buttons.append([InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def period_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "long"), callback_data="LONG"),
-         InlineKeyboardButton(text=get_text(lang, "short"), callback_data="SHORT")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
+        [InlineKeyboardButton(text=get_text(lang, "period_day"), callback_data="period_day")],
+        [InlineKeyboardButton(text=get_text(lang, "period_week"), callback_data="period_week")],
+        [InlineKeyboardButton(text=get_text(lang, "period_month"), callback_data="period_month")],
+        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")]
     ])
 
-def result_kb(lang):
+def emotion_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "take"), callback_data="TAKE"),
-         InlineKeyboardButton(text=get_text(lang, "stop"), callback_data="STOP")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
+        [InlineKeyboardButton(text=get_text(lang, "emotion_calm"), callback_data="emotion_calm")],
+        [InlineKeyboardButton(text=get_text(lang, "emotion_fear"), callback_data="emotion_fear")],
+        [InlineKeyboardButton(text=get_text(lang, "emotion_greed"), callback_data="emotion_greed")],
+        [InlineKeyboardButton(text=get_text(lang, "emotion_tilt"), callback_data="emotion_tilt")],
+        [InlineKeyboardButton(text=get_text(lang, "emotion_confidence"), callback_data="emotion_confidence")],
+        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")]
     ])
 
-def yesno_kb(lang):
+def sort_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, "yes"), callback_data="yes"),
-         InlineKeyboardButton(text=get_text(lang, "no"), callback_data="no")]
+        [InlineKeyboardButton(text=get_text(lang, "sort_newest"), callback_data="sort_newest")],
+        [InlineKeyboardButton(text=get_text(lang, "sort_oldest"), callback_data="sort_oldest")],
+        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")]
+    ])
+
+def recent_trades_kb(trades, lang, mode):
+    buttons = []
+    for _, row in trades.iterrows():
+        pnl = row['pnl'] if mode == "real" else row['pnl_usd']
+        emoji = "✅" if pnl > 0 else "❌"
+        buttons.append([InlineKeyboardButton(text=f"{emoji} #{row['id']} {row['asset']} | ${pnl:.0f}", callback_data=f"trade_{row['id']}")])
+    buttons.append([InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def back_kb(lang):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
     ])
 
 def confirm_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=get_text(lang, "confirm_clear"), callback_data="clear_yes")],
-        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
+        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_to_mode_menu")]
     ])
 
 def settings_kb(lang):
@@ -501,9 +633,24 @@ def quality_kb():
          InlineKeyboardButton(text="5", callback_data="q_5")]
     ])
 
-def back_kb(lang):
+def direction_kb(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=get_text(lang, "long"), callback_data="LONG"),
+         InlineKeyboardButton(text=get_text(lang, "short"), callback_data="SHORT")],
         [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
+    ])
+
+def result_kb(lang):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=get_text(lang, "take"), callback_data="TAKE"),
+         InlineKeyboardButton(text=get_text(lang, "stop"), callback_data="STOP")],
+        [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
+    ])
+
+def yesno_kb(lang):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=get_text(lang, "yes"), callback_data="yes"),
+         InlineKeyboardButton(text=get_text(lang, "no"), callback_data="no")]
     ])
 
 # ========== FSM ==========
@@ -520,6 +667,7 @@ class TradeForm(StatesGroup):
     link_url = State()
     links = State()
     trade_date = State()
+    emotion = State()
 
 class BacktestForm(StatesGroup):
     period_start = State()
@@ -549,7 +697,7 @@ bot = None
 async def start_cmd(msg: Message, state: FSMContext):
     await state.clear()
     uid = msg.from_user.id
-    lang = get_user_lang(uid)  # по умолчанию 'en'
+    lang = get_user_lang(uid)
     await msg.answer(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_kb(lang))
 
 @router.message(Command("settings"))
@@ -559,6 +707,7 @@ async def settings_cmd(msg: Message, state: FSMContext):
     lang = get_user_lang(uid)
     await msg.answer(get_text(lang, "settings_menu"), parse_mode="Markdown", reply_markup=settings_kb(lang))
 
+# ========== НАСТРОЙКИ ==========
 @router.callback_query(F.data == "settings_menu")
 async def settings(call: CallbackQuery, state: FSMContext):
     await state.clear()
@@ -592,92 +741,240 @@ async def back_mode(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_kb(lang))
     await call.answer()
 
+@router.callback_query(F.data == "back_to_mode_menu")
+async def back_to_mode_menu(call: CallbackQuery, state: FSMContext):
+    await state.clear()
+    lang = get_user_lang(call.from_user.id)
+    mode = (await state.get_data()).get('mode', 'real')
+    await call.message.edit_text(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_kb(lang))
+    await call.answer()
+
 # ========== ВЫБОР РЕЖИМА ==========
 @router.callback_query(F.data.in_(["mode_real", "mode_backtest"]))
 async def choose_mode(call: CallbackQuery, state: FSMContext):
     mode = call.data.split("_")[1]
     await state.update_data(mode=mode)
     lang = get_user_lang(call.from_user.id)
+    await call.message.edit_text(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_menu_kb(lang, mode))
+    await call.answer()
+
+# ========== СТАТИСТИКА МЕНЮ ==========
+@router.callback_query(F.data == "stats_menu")
+async def stats_menu(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
+    lang = get_user_lang(call.from_user.id)
+    if mode == "real":
+        await call.message.edit_text(get_text(lang, "stats_menu"), parse_mode="Markdown", reply_markup=stats_menu_kb_with_emotions(lang))
+    else:
+        await call.message.edit_text(get_text(lang, "stats_menu"), parse_mode="Markdown", reply_markup=stats_menu_kb(lang))
+    await call.answer()
+
+# ========== ВСЯ СТАТИСТИКА ==========
+@router.callback_query(F.data == "stats_all")
+async def stats_all(call: CallbackQuery, state: FSMContext):
+    uid = call.from_user.id
+    lang = get_user_lang(uid)
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
+    sort_order = data.get('sort_order', 'DESC')
+    if mode == "real":
+        df = get_trades(uid, mode="real", sort_by_date=sort_order)
+        txt = get_real_stats_text(df, lang, "stats_header")
+    else:
+        df = get_backtests(uid)
+        txt = get_backtest_stats_text(df, lang)
+    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=stats_menu_kb_with_emotions(lang) if mode == "real" else stats_menu_kb(lang))
+    await call.answer()
+
+# ========== ПО АКТИВАМ ==========
+@router.callback_query(F.data == "stats_by_asset")
+async def stats_by_asset(call: CallbackQuery, state: FSMContext):
+    uid = call.from_user.id
+    lang = get_user_lang(uid)
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
+    if mode == "real":
+        assets = get_all_assets(uid, mode="real")
+    else:
+        assets = get_backtest_assets(uid)
+    if not assets:
+        await call.answer(get_text(lang, "no_data"), show_alert=True)
+        return
+    await call.message.edit_text(get_text(lang, "select_asset"), parse_mode="Markdown", reply_markup=asset_kb(assets, lang))
+    await call.answer()
+
+@router.callback_query(F.data.startswith("asset_"))
+async def show_asset_stats(call: CallbackQuery, state: FSMContext):
+    asset = call.data.split("_")[1]
+    uid = call.from_user.id
+    lang = get_user_lang(uid)
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
+    sort_order = data.get('sort_order', 'DESC')
+    if mode == "real":
+        df = get_trades(uid, mode="real", asset=asset, sort_by_date=sort_order)
+        txt = get_real_stats_text(df, lang, f"📊 Statistics for {asset}")
+    else:
+        df = get_backtests(uid)
+        df = df[df['asset'] == asset]
+        txt = get_backtest_stats_text(df, lang)
+    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=asset_kb(get_all_assets(uid, mode) if mode == "real" else get_backtest_assets(uid), lang))
+    await call.answer()
+
+# ========== ПО ДАТЕ ==========
+@router.callback_query(F.data == "stats_by_date")
+async def stats_by_date(call: CallbackQuery):
+    lang = get_user_lang(call.from_user.id)
+    await call.message.edit_text(get_text(lang, "select_period"), parse_mode="Markdown", reply_markup=period_kb(lang))
+    await call.answer()
+
+@router.callback_query(F.data.in_(["period_day", "period_week", "period_month"]))
+async def show_period_stats(call: CallbackQuery, state: FSMContext):
+    period = call.data.split("_")[1]
+    uid = call.from_user.id
+    lang = get_user_lang(uid)
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
+    sort_order = data.get('sort_order', 'DESC')
+    if period == "day":
+        start_date = datetime.now().strftime("%Y-%m-%d")
+        title = get_text(lang, "stats_today")
+    elif period == "week":
+        start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        title = get_text(lang, "stats_week")
+    else:
+        start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        title = get_text(lang, "stats_month")
+    if mode == "real":
+        df = get_trades(uid, mode="real", start_date=start_date, sort_by_date=sort_order)
+        txt = get_real_stats_text(df, lang, title)
+    else:
+        df = get_backtests(uid)
+        txt = get_backtest_stats_text(df, lang)
+    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=period_kb(lang))
+    await call.answer()
+
+# ========== ПО ЭМОЦИЯМ (только реальная торговля) ==========
+@router.callback_query(F.data == "stats_by_emotion")
+async def stats_by_emotion(call: CallbackQuery):
+    lang = get_user_lang(call.from_user.id)
+    await call.message.edit_text(get_text(lang, "select_period") + " (Emotions)", parse_mode="Markdown", reply_markup=emotion_kb(lang))
+    await call.answer()
+
+@router.callback_query(F.data.startswith("emotion_"))
+async def show_emotion_stats(call: CallbackQuery, state: FSMContext):
+    emotion_map = {
+        "emotion_calm": "😊 Calm",
+        "emotion_fear": "😨 Fear",
+        "emotion_greed": "😈 Greed",
+        "emotion_tilt": "🤬 Tilt",
+        "emotion_confidence": "😌 Confidence"
+    }
+    emotion = emotion_map.get(call.data, "😊 Calm")
+    uid = call.from_user.id
+    lang = get_user_lang(uid)
+    data = await state.get_data()
+    sort_order = data.get('sort_order', 'DESC')
+    df = get_trades(uid, mode="real", sort_by_date=sort_order)
+    df = df[df['emotion'] == emotion]
+    txt = get_real_stats_text(df, lang, f"😊 {emotion}")
+    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=emotion_kb(lang))
+    await call.answer()
+
+# ========== НЕДАВНИЕ СДЕЛКИ ==========
+@router.callback_query(F.data == "stats_recent")
+async def stats_recent(call: CallbackQuery, state: FSMContext):
+    uid = call.from_user.id
+    lang = get_user_lang(uid)
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
+    if mode == "real":
+        df = get_trades(uid, mode="real", sort_by_date="DESC", limit=10)
+        if df.empty:
+            await call.answer(get_text(lang, "no_data"), show_alert=True)
+            return
+        await call.message.edit_text(get_text(lang, "recent_trades", count=len(df)), parse_mode="Markdown", reply_markup=recent_trades_kb(df, lang, mode))
+    else:
+        df = get_backtests(uid, limit=10)
+        if df.empty:
+            await call.answer(get_text(lang, "no_data"), show_alert=True)
+            return
+        buttons = []
+        for _, row in df.iterrows():
+            pnl = row['pnl_usd']
+            emoji = "✅" if pnl > 0 else "❌"
+            buttons.append([InlineKeyboardButton(text=f"{emoji} #{row['id']} {row['asset']} | ${pnl:.0f}", callback_data=f"bt_{row['id']}")])
+        buttons.append([InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")])
+        await call.message.edit_text(get_text(lang, "recent_trades", count=len(df)), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    await call.answer()
+
+@router.callback_query(F.data.startswith("trade_"))
+async def show_trade_detail(call: CallbackQuery):
+    trade_id = int(call.data.split("_")[1])
+    uid = call.from_user.id
+    lang = get_user_lang(uid)
+    trade = get_trade_by_id(trade_id, uid)
+    if not trade:
+        await call.answer(get_text(lang, "no_data"), show_alert=True)
+        return
+    links = trade.get('links', '') or '-'
+    text = get_text(lang, "trade_detail",
+        id=trade['id'], asset=trade['asset'], direction="🟢 LONG" if trade['direction'] == "LONG" else "🔴 SHORT",
+        entry=trade['entry_price'], exit=trade['exit_price'], volume=trade['volume'],
+        pnl=trade['pnl'], result="✅ TAKE" if trade['result'] == "TAKE" else "❌ STOP",
+        date=trade['trade_date'], links=links
+    )
+    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_recent")]]))
+    await call.answer()
+
+@router.callback_query(F.data.startswith("bt_"))
+async def show_backtest_detail(call: CallbackQuery):
+    bt_id = int(call.data.split("_")[1])
+    uid = call.from_user.id
+    lang = get_user_lang(uid)
+    bt = get_backtest_by_id(bt_id, uid)
+    if not bt:
+        await call.answer(get_text(lang, "no_data"), show_alert=True)
+        return
+    text = get_text(lang, "bt_trade_detail",
+        id=bt['id'], asset=bt['asset'], direction="🟢 LONG" if bt['direction'] == "LONG" else "🔴 SHORT",
+        entry=bt['entry_price'], exit=bt['exit_price'], pnl=bt['pnl_usd'], r=bt['pnl_r'],
+        quality=bt['signal_quality'], setup=bt['setup'], trigger=bt['trigger'], date=bt['period_start']
+    )
+    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_recent")]]))
+    await call.answer()
+
+# ========== СОРТИРОВКА ==========
+@router.callback_query(F.data == "stats_sort")
+async def stats_sort(call: CallbackQuery):
+    lang = get_user_lang(call.from_user.id)
+    await call.message.edit_text(get_text(lang, "stats_sort"), parse_mode="Markdown", reply_markup=sort_kb(lang))
+    await call.answer()
+
+@router.callback_query(F.data.in_(["sort_newest", "sort_oldest"]))
+async def set_sort_order(call: CallbackQuery, state: FSMContext):
+    sort_order = "DESC" if call.data == "sort_newest" else "ASC"
+    await state.update_data(sort_order=sort_order)
+    lang = get_user_lang(call.from_user.id)
+    await call.message.edit_text(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_kb(lang))
+    await call.answer()
+
+# ========== ДОБАВЛЕНИЕ СДЕЛКИ (РЕАЛЬНАЯ) ==========
+@router.callback_query(F.data == "add_trade")
+async def add_trade_start(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
     if mode == "real":
         await state.set_state(TradeForm.asset)
+        lang = get_user_lang(call.from_user.id)
         await call.message.edit_text(get_text(lang, "enter_asset"), reply_markup=back_kb(lang))
     else:
         await state.set_state(BacktestForm.period_start)
+        lang = get_user_lang(call.from_user.id)
         await call.message.edit_text(get_text(lang, "bt_period_start"), reply_markup=back_kb(lang))
     await call.answer()
 
-# ========== КОМАНДЫ СТАТИСТИКИ ==========
-@router.message(Command("stats"))
-async def cmd_stats(msg: Message, state: FSMContext):
-    await state.clear()
-    uid = msg.from_user.id
-    lang = get_user_lang(uid)
-    df = get_trades(uid, mode="real")
-    if df.empty:
-        await msg.answer(get_text(lang, "no_data"))
-        return
-    text = get_real_stats_text(df, lang, "stats_header")
-    await msg.answer(text, parse_mode="Markdown")
-
-@router.message(Command("day"))
-async def cmd_day(msg: Message, state: FSMContext):
-    await state.clear()
-    uid = msg.from_user.id
-    lang = get_user_lang(uid)
-    today = datetime.now().strftime("%Y-%m-%d")
-    df = get_trades(uid, mode="real", start_date=today)
-    if df.empty:
-        await msg.answer(get_text(lang, "no_data"))
-        return
-    text = get_real_stats_text(df, lang, "stats_today")
-    await msg.answer(text, parse_mode="Markdown")
-
-@router.message(Command("week"))
-async def cmd_week(msg: Message, state: FSMContext):
-    await state.clear()
-    uid = msg.from_user.id
-    lang = get_user_lang(uid)
-    week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-    df = get_trades(uid, mode="real", start_date=week_ago)
-    if df.empty:
-        await msg.answer(get_text(lang, "no_data"))
-        return
-    text = get_real_stats_text(df, lang, "stats_week")
-    await msg.answer(text, parse_mode="Markdown")
-
-@router.message(Command("month"))
-async def cmd_month(msg: Message, state: FSMContext):
-    await state.clear()
-    uid = msg.from_user.id
-    lang = get_user_lang(uid)
-    month_ago = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-    df = get_trades(uid, mode="real", start_date=month_ago)
-    if df.empty:
-        await msg.answer(get_text(lang, "no_data"))
-        return
-    text = get_real_stats_text(df, lang, "stats_month")
-    await msg.answer(text, parse_mode="Markdown")
-
-@router.message(Command("get"))
-async def cmd_get(msg: Message):
-    uid = msg.from_user.id
-    lang = get_user_lang(uid)
-    df = get_trades(uid, mode="real")
-    if df.empty:
-        await msg.answer(get_text(lang, "no_data"))
-        return
-    fname = export_real_to_excel(df, uid)
-    await msg.answer_document(FSInputFile(fname), caption=get_text(lang, "excel_ready"))
-    os.remove(fname)
-
-@router.message(Command("clear"))
-async def cmd_clear(msg: Message):
-    uid = msg.from_user.id
-    lang = get_user_lang(uid)
-    clear_trades(uid, mode="real")
-    await msg.answer(get_text(lang, "cleared"))
-
-# ========== РЕАЛЬНАЯ ТОРГОВЛЯ ==========
 @router.message(TradeForm.asset)
 async def real_asset(msg: Message, state: FSMContext):
     await state.update_data(asset=msg.text.upper())
@@ -687,10 +984,17 @@ async def real_asset(msg: Message, state: FSMContext):
 
 @router.callback_query(F.data.in_(["LONG","SHORT"]))
 async def real_dir(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
     await state.update_data(direction=call.data)
-    await state.set_state(TradeForm.entry_price)
-    lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "enter_entry_price"), reply_markup=back_kb(lang))
+    if mode == "real":
+        await state.set_state(TradeForm.entry_price)
+        lang = get_user_lang(call.from_user.id)
+        await call.message.edit_text(get_text(lang, "enter_entry_price"), reply_markup=back_kb(lang))
+    else:
+        await state.set_state(BacktestForm.entry_price)
+        lang = get_user_lang(call.from_user.id)
+        await call.message.edit_text(get_text(lang, "enter_entry_price"), reply_markup=back_kb(lang))
     await call.answer()
 
 @router.message(TradeForm.entry_price)
@@ -803,14 +1107,33 @@ async def real_date(msg: Message, state: FSMContext):
         pnl = (exit_p - entry) * vol
     else:
         pnl = (entry - exit_p) * vol
-    save_trade(msg.from_user.id, "real", data['asset'], direction, entry, exit_p, vol, pnl,
-               data['result'], data['comment'], tdate, data.get('links', ''))
-    await state.clear()
-    mode = data.get('mode', 'real')
-    lang = get_user_lang(msg.from_user.id)
-    await msg.answer(get_text(lang, "trade_saved"), reply_markup=main_menu_kb(lang, mode))
+    await state.update_data(trade_date=tdate, pnl=pnl)
+    await state.set_state(TradeForm.emotion)
+    await msg.answer(get_text(lang, "enter_emotion"), reply_markup=emotion_kb(lang))
 
-# ========== БЭКТЕСТ ==========
+@router.callback_query(F.data.startswith("emotion_"))
+async def real_emotion(call: CallbackQuery, state: FSMContext):
+    emotion_map = {
+        "emotion_calm": "😊 Calm",
+        "emotion_fear": "😨 Fear",
+        "emotion_greed": "😈 Greed",
+        "emotion_tilt": "🤬 Tilt",
+        "emotion_confidence": "😌 Confidence"
+    }
+    emotion = emotion_map.get(call.data, "😊 Calm")
+    data = await state.get_data()
+    save_trade(
+        call.from_user.id, "real", data['asset'], data['direction'],
+        data['entry_price'], data['exit_price'], data['volume'], data['pnl'],
+        data['result'], data['comment'], data['trade_date'], data.get('links', ''), emotion
+    )
+    await state.clear()
+    lang = get_user_lang(call.from_user.id)
+    mode = data.get('mode', 'real')
+    await call.message.edit_text(get_text(lang, "trade_saved"), parse_mode="Markdown", reply_markup=mode_menu_kb(lang, mode))
+    await call.answer()
+
+# ========== БЭКТЕСТ (ДОБАВЛЕНИЕ) ==========
 @router.message(BacktestForm.period_start)
 async def bt_start(msg: Message, state: FSMContext):
     lang = get_user_lang(msg.from_user.id)
@@ -868,14 +1191,6 @@ async def bt_asset(msg: Message, state: FSMContext):
     await state.set_state(BacktestForm.direction)
     lang = get_user_lang(msg.from_user.id)
     await msg.answer(get_text(lang, "choose_direction"), reply_markup=direction_kb(lang))
-
-@router.callback_query(F.data.in_(["LONG","SHORT"]))
-async def bt_dir(call: CallbackQuery, state: FSMContext):
-    await state.update_data(direction=call.data)
-    await state.set_state(BacktestForm.entry_price)
-    lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "enter_entry_price"), reply_markup=back_kb(lang))
-    await call.answer()
 
 @router.message(BacktestForm.entry_price)
 async def bt_entry(msg: Message, state: FSMContext):
@@ -988,57 +1303,9 @@ async def bt_link(msg: Message, state: FSMContext):
     save_backtest(bt_data)
     await state.clear()
     lang = get_user_lang(msg.from_user.id)
-    await msg.answer("✅ Backtest saved!", reply_markup=main_menu_kb(lang, "backtest"))
+    await msg.answer("✅ Backtest saved!", reply_markup=mode_menu_kb(lang, "backtest"))
 
-# ========== СТАТИСТИКА И ЭКСПОРТ (через кнопки) ==========
-@router.callback_query(F.data == "stats_all")
-async def stats_all(call: CallbackQuery, state: FSMContext):
-    uid = call.from_user.id
-    lang = get_user_lang(uid)
-    data = await state.get_data()
-    mode = data.get('mode', 'real')
-    if mode == "real":
-        df = get_trades(uid, mode="real")
-        txt = get_real_stats_text(df, lang, "stats_header")
-    else:
-        df = get_backtests(uid)
-        txt = get_backtest_stats_text(df, lang)
-    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=main_menu_kb(lang, mode))
-    await call.answer()
-
-@router.callback_query(F.data == "stats_day")
-async def stats_day(call: CallbackQuery, state: FSMContext):
-    uid = call.from_user.id
-    lang = get_user_lang(uid)
-    today = datetime.now().strftime("%Y-%m-%d")
-    df = get_trades(uid, mode="real", start_date=today)
-    txt = get_real_stats_text(df, lang, "stats_today")
-    mode = "real"
-    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=main_menu_kb(lang, mode))
-    await call.answer()
-
-@router.callback_query(F.data == "stats_week")
-async def stats_week(call: CallbackQuery, state: FSMContext):
-    uid = call.from_user.id
-    lang = get_user_lang(uid)
-    week = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-    df = get_trades(uid, mode="real", start_date=week)
-    txt = get_real_stats_text(df, lang, "stats_week")
-    mode = "real"
-    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=main_menu_kb(lang, mode))
-    await call.answer()
-
-@router.callback_query(F.data == "stats_month")
-async def stats_month(call: CallbackQuery, state: FSMContext):
-    uid = call.from_user.id
-    lang = get_user_lang(uid)
-    month = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-    df = get_trades(uid, mode="real", start_date=month)
-    txt = get_real_stats_text(df, lang, "stats_month")
-    mode = "real"
-    await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=main_menu_kb(lang, mode))
-    await call.answer()
-
+# ========== EXCEL И ОЧИСТКА ==========
 @router.callback_query(F.data == "get_excel")
 async def get_excel(call: CallbackQuery, state: FSMContext):
     uid = call.from_user.id
@@ -1076,7 +1343,7 @@ async def clear_yes(call: CallbackQuery, state: FSMContext):
     else:
         clear_backtests(uid)
     lang = get_user_lang(uid)
-    await call.message.edit_text(get_text(lang, "cleared"), reply_markup=main_menu_kb(lang, mode))
+    await call.message.edit_text(get_text(lang, "cleared"), reply_markup=mode_menu_kb(lang, mode))
     await call.answer()
 
 # ========== ЗАПУСК ==========
@@ -1087,16 +1354,13 @@ async def main():
     await bot.set_my_commands([
         BotCommand(command="start", description="Start / Запуск"),
         BotCommand(command="settings", description="Settings / Настройки"),
-        BotCommand(command="stats", description="All statistics / Вся статистика"),
-        BotCommand(command="day", description="Today / Сегодня"),
-        BotCommand(command="week", description="Week / Неделя"),
-        BotCommand(command="month", description="Month / Месяц"),
+        BotCommand(command="stats", description="Statistics / Статистика"),
         BotCommand(command="get", description="Excel report / Excel отчёт"),
         BotCommand(command="clear", description="Clear journal / Очистить журнал"),
     ])
     dp = Dispatcher()
     dp.include_router(router)
-    print("✅ Бот запущен! Основной язык — английский. Сменить язык можно в настройках (/settings).")
+    print("✅ Бот запущен! Полное меню статистики с кнопками, недавние сделки, сортировка, эмоции.")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
