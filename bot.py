@@ -3,7 +3,7 @@ import sqlite3
 import os
 from datetime import datetime, timedelta
 
-from aiogram import Bot, Dispatcher, F, Router
+from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, CallbackQuery, FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
@@ -92,6 +92,9 @@ TEXTS = {
         "stats_sort": "🔄 Сортировка (Новые/Старые)",
         "stats_back": "🔙 Назад в меню режима",
         "stats_header": "📊 Ваша статистика",
+        "stats_today": "📆 Статистика за сегодня",
+        "stats_week": "📅 Статистика за неделю",
+        "stats_month": "📊 Статистика за месяц",
         "total_trades": "📋 Всего сделок: {total}",
         "wins": "✅ Прибыльных: {wins}",
         "losses": "❌ Убыточных: {losses}",
@@ -181,6 +184,9 @@ TEXTS = {
         "stats_sort": "🔄 Sort (Newest/Oldest)",
         "stats_back": "🔙 Back to Mode Menu",
         "stats_header": "📊 Your statistics",
+        "stats_today": "📆 Today's statistics",
+        "stats_week": "📅 Weekly statistics",
+        "stats_month": "📊 Monthly statistics",
         "total_trades": "📋 Total trades: {total}",
         "wins": "✅ Winning: {wins}",
         "losses": "❌ Losing: {losses}",
@@ -307,24 +313,6 @@ def get_all_assets(user_id):
 def clear_trades(user_id):
     conn = sqlite3.connect(DB_NAME)
     conn.execute("DELETE FROM trades WHERE user_id = ?", (user_id,))
-    conn.commit()
-    conn.close()
-
-def save_backtest(data):
-    conn = sqlite3.connect(BT_DB_NAME)
-    conn.execute("""
-        INSERT INTO backtests (
-            user_id, period_start, period_end, timeframe, commission, spread,
-            asset, direction, entry_price, exit_price, sl_price, tp_price,
-            pnl_usd, pnl_r, signal_quality, setup, trigger, link_chart, entry_time, exit_time
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        data['user_id'], data['period_start'], data['period_end'], data['timeframe'],
-        data['commission'], data['spread'], data['asset'], data['direction'],
-        data['entry_price'], data['exit_price'], data['sl_price'], data['tp_price'],
-        data['pnl_usd'], data['pnl_r'], data['signal_quality'],
-        data['setup'], data['trigger'], data['link_chart'], data['entry_time'], data['exit_time']
-    ))
     conn.commit()
     conn.close()
 
@@ -577,11 +565,11 @@ class BacktestForm(StatesGroup):
     link_chart = State()
 
 # ========== РОУТЕР ==========
-router = Router()
 bot = None
+dp = Dispatcher()
 
-# ========== СТАРТ ==========
-@router.message(CommandStart())
+# ========== КОМАНДЫ ==========
+@dp.message(CommandStart())
 async def start_cmd(msg: Message, state: FSMContext):
     await state.clear()
     uid = msg.from_user.id
@@ -591,8 +579,103 @@ async def start_cmd(msg: Message, state: FSMContext):
         return
     await msg.answer(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_kb(lang))
 
-# ========== КОМАНДЫ EXCEL ==========
-@router.message(Command("get_real"))
+@dp.message(Command("stats"))
+async def cmd_stats(msg: Message):
+    uid = msg.from_user.id
+    lang = get_user_lang(uid)
+    df = get_trades(uid)
+    text = get_stats_text(df, lang)
+    await msg.answer(text, parse_mode="Markdown")
+
+@dp.message(Command("day"))
+async def cmd_day(msg: Message):
+    uid = msg.from_user.id
+    lang = get_user_lang(uid)
+    today = datetime.now().strftime("%Y-%m-%d")
+    df = get_trades(uid, start_date=today)
+    if df.empty:
+        await msg.answer(get_text(lang, "no_data_add_trade"))
+        return
+    total = len(df)
+    wins = len(df[df['pnl'] > 0])
+    losses = len(df[df['pnl'] < 0])
+    wr = wins/total*100 if total else 0
+    longs = len(df[df['direction'] == 'LONG'])
+    shorts = len(df[df['direction'] == 'SHORT'])
+    total_pnl = df['pnl'].sum()
+    await msg.answer(
+        f"📆 **Статистика за сегодня**\n\n"
+        f"📋 Сделок: {total}\n"
+        f"✅ Прибыльных: {wins}\n"
+        f"❌ Убыточных: {losses}\n"
+        f"🎯 Винрейт: {wr:.1f}%\n"
+        f"📈 Лонги: {longs} | 📉 Шорты: {shorts}\n"
+        f"💰 P&L: ${total_pnl:.2f}",
+        parse_mode="Markdown"
+    )
+
+@dp.message(Command("week"))
+async def cmd_week(msg: Message):
+    uid = msg.from_user.id
+    lang = get_user_lang(uid)
+    week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    df = get_trades(uid, start_date=week_ago)
+    if df.empty:
+        await msg.answer(get_text(lang, "no_data_add_trade"))
+        return
+    total = len(df)
+    wins = len(df[df['pnl'] > 0])
+    losses = len(df[df['pnl'] < 0])
+    wr = wins/total*100 if total else 0
+    longs = len(df[df['direction'] == 'LONG'])
+    shorts = len(df[df['direction'] == 'SHORT'])
+    total_pnl = df['pnl'].sum()
+    await msg.answer(
+        f"📅 **Статистика за неделю**\n\n"
+        f"📋 Сделок: {total}\n"
+        f"✅ Прибыльных: {wins}\n"
+        f"❌ Убыточных: {losses}\n"
+        f"🎯 Винрейт: {wr:.1f}%\n"
+        f"📈 Лонги: {longs} | 📉 Шорты: {shorts}\n"
+        f"💰 P&L: ${total_pnl:.2f}",
+        parse_mode="Markdown"
+    )
+
+@dp.message(Command("month"))
+async def cmd_month(msg: Message):
+    uid = msg.from_user.id
+    lang = get_user_lang(uid)
+    month_ago = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    df = get_trades(uid, start_date=month_ago)
+    if df.empty:
+        await msg.answer(get_text(lang, "no_data_add_trade"))
+        return
+    total = len(df)
+    wins = len(df[df['pnl'] > 0])
+    losses = len(df[df['pnl'] < 0])
+    wr = wins/total*100 if total else 0
+    longs = len(df[df['direction'] == 'LONG'])
+    shorts = len(df[df['direction'] == 'SHORT'])
+    total_pnl = df['pnl'].sum()
+    await msg.answer(
+        f"📊 **Статистика за месяц**\n\n"
+        f"📋 Сделок: {total}\n"
+        f"✅ Прибыльных: {wins}\n"
+        f"❌ Убыточных: {losses}\n"
+        f"🎯 Винрейт: {wr:.1f}%\n"
+        f"📈 Лонги: {longs} | 📉 Шорты: {shorts}\n"
+        f"💰 P&L: ${total_pnl:.2f}",
+        parse_mode="Markdown"
+    )
+
+@dp.message(Command("clear"))
+async def cmd_clear(msg: Message):
+    uid = msg.from_user.id
+    lang = get_user_lang(uid)
+    clear_trades(uid)
+    await msg.answer(get_text(lang, "cleared"))
+
+@dp.message(Command("get_real"))
 async def cmd_get_real(msg: Message):
     uid = msg.from_user.id
     lang = get_user_lang(uid)
@@ -604,7 +687,7 @@ async def cmd_get_real(msg: Message):
     await msg.answer_document(document=FSInputFile(fname), caption=get_text(lang, "excel_ready"))
     os.remove(fname)
 
-@router.message(Command("get_backtest"))
+@dp.message(Command("get_backtest"))
 async def cmd_get_backtest(msg: Message):
     uid = msg.from_user.id
     lang = get_user_lang(uid)
@@ -617,7 +700,7 @@ async def cmd_get_backtest(msg: Message):
     os.remove(fname)
 
 # ========== НАСТРОЙКИ ==========
-@router.callback_query(F.data.startswith("lang_"))
+@dp.callback_query(F.data.startswith("lang_"))
 async def set_lang(call: CallbackQuery, state: FSMContext):
     lang = call.data.split("_")[1]
     set_user_lang(call.from_user.id, lang)
@@ -625,24 +708,24 @@ async def set_lang(call: CallbackQuery, state: FSMContext):
     await call.message.answer(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_kb(lang))
     await call.answer()
 
-@router.callback_query(F.data == "settings_menu")
+@dp.callback_query(F.data == "settings_menu")
 async def settings(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
     await call.message.edit_text(get_text(lang, "settings_menu"), parse_mode="Markdown", reply_markup=settings_kb(lang))
     await call.answer()
 
-@router.callback_query(F.data == "change_lang")
+@dp.callback_query(F.data == "change_lang")
 async def change_lang(call: CallbackQuery):
     await call.message.edit_text(get_text("ru", "select_language"), reply_markup=lang_kb())
     await call.answer()
 
-@router.callback_query(F.data == "support")
+@dp.callback_query(F.data == "support")
 async def support(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
     await call.message.edit_text(get_text(lang, "support_info"), parse_mode="Markdown", reply_markup=settings_kb(lang))
     await call.answer()
 
-@router.callback_query(F.data == "back_mode")
+@dp.callback_query(F.data == "back_mode")
 async def back_mode(call: CallbackQuery, state: FSMContext):
     await state.clear()
     lang = get_user_lang(call.from_user.id)
@@ -650,24 +733,22 @@ async def back_mode(call: CallbackQuery, state: FSMContext):
     await call.answer()
 
 # ========== ВЫБОР РЕЖИМА ==========
-@router.callback_query(F.data == "mode_real")
+@dp.callback_query(F.data == "mode_real")
 async def mode_real(call: CallbackQuery, state: FSMContext):
     await state.clear()
-    await state.update_data(mode="real")
     lang = get_user_lang(call.from_user.id)
     await call.message.edit_text(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=real_menu_kb(lang))
     await call.answer()
 
-@router.callback_query(F.data == "mode_backtest")
+@dp.callback_query(F.data == "mode_backtest")
 async def mode_backtest(call: CallbackQuery, state: FSMContext):
     await state.clear()
-    await state.update_data(mode="backtest")
     lang = get_user_lang(call.from_user.id)
     await call.message.edit_text(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=backtest_menu_kb(lang))
     await call.answer()
 
 # ========== ДОБАВЛЕНИЕ РЕАЛЬНОЙ СДЕЛКИ ==========
-@router.callback_query(F.data == "add_real_trade")
+@dp.callback_query(F.data == "add_real_trade")
 async def add_real_trade(call: CallbackQuery, state: FSMContext):
     await state.clear()
     await state.set_state(RealTradeForm.asset)
@@ -675,14 +756,14 @@ async def add_real_trade(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(get_text(lang, "enter_asset"), reply_markup=back_kb(lang))
     await call.answer()
 
-@router.message(RealTradeForm.asset)
+@dp.message(RealTradeForm.asset)
 async def real_asset(msg: Message, state: FSMContext):
     await state.update_data(asset=msg.text.upper())
     await state.set_state(RealTradeForm.direction)
     lang = get_user_lang(msg.from_user.id)
     await msg.answer(get_text(lang, "choose_direction"), reply_markup=direction_kb(lang))
 
-@router.callback_query(F.data.in_(["LONG", "SHORT"]))
+@dp.callback_query(F.data.in_(["LONG", "SHORT"]))
 async def real_direction(call: CallbackQuery, state: FSMContext):
     await state.update_data(direction=call.data)
     await state.set_state(RealTradeForm.entry_price)
@@ -690,7 +771,7 @@ async def real_direction(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(get_text(lang, "enter_entry_price"), reply_markup=back_kb(lang))
     await call.answer()
 
-@router.message(RealTradeForm.entry_price)
+@dp.message(RealTradeForm.entry_price)
 async def real_entry(msg: Message, state: FSMContext):
     try:
         await state.update_data(entry_price=float(msg.text.replace(",", ".")))
@@ -701,7 +782,7 @@ async def real_entry(msg: Message, state: FSMContext):
         lang = get_user_lang(msg.from_user.id)
         await msg.answer(get_text(lang, "error_number"))
 
-@router.message(RealTradeForm.exit_price)
+@dp.message(RealTradeForm.exit_price)
 async def real_exit(msg: Message, state: FSMContext):
     try:
         await state.update_data(exit_price=float(msg.text.replace(",", ".")))
@@ -712,7 +793,7 @@ async def real_exit(msg: Message, state: FSMContext):
         lang = get_user_lang(msg.from_user.id)
         await msg.answer(get_text(lang, "error_number"))
 
-@router.message(RealTradeForm.volume)
+@dp.message(RealTradeForm.volume)
 async def real_volume(msg: Message, state: FSMContext):
     try:
         await state.update_data(volume=float(msg.text.replace(",", ".")))
@@ -723,7 +804,7 @@ async def real_volume(msg: Message, state: FSMContext):
         lang = get_user_lang(msg.from_user.id)
         await msg.answer(get_text(lang, "error_number"))
 
-@router.callback_query(F.data.in_(["TAKE", "STOP"]))
+@dp.callback_query(F.data.in_(["TAKE", "STOP"]))
 async def real_result(call: CallbackQuery, state: FSMContext):
     await state.update_data(result=call.data)
     await state.set_state(RealTradeForm.comment)
@@ -731,7 +812,7 @@ async def real_result(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(get_text(lang, "enter_comment"), reply_markup=back_kb(lang))
     await call.answer()
 
-@router.message(RealTradeForm.comment)
+@dp.message(RealTradeForm.comment)
 async def real_comment(msg: Message, state: FSMContext):
     com = msg.text.strip()
     if com == "-":
@@ -741,14 +822,14 @@ async def real_comment(msg: Message, state: FSMContext):
     lang = get_user_lang(msg.from_user.id)
     await msg.answer(get_text(lang, "add_link_question"), reply_markup=yesno_kb(lang))
 
-@router.callback_query(F.data == "yes")
+@dp.callback_query(F.data == "yes")
 async def real_add_link(call: CallbackQuery, state: FSMContext):
     await state.set_state(RealTradeForm.link_url)
     lang = get_user_lang(call.from_user.id)
     await call.message.edit_text(get_text(lang, "enter_link"), reply_markup=back_kb(lang))
     await call.answer()
 
-@router.callback_query(F.data == "no")
+@dp.callback_query(F.data == "no")
 async def real_skip_links(call: CallbackQuery, state: FSMContext):
     await state.update_data(links="")
     await state.set_state(RealTradeForm.trade_date)
@@ -756,7 +837,7 @@ async def real_skip_links(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(get_text(lang, "enter_date"), reply_markup=back_kb(lang))
     await call.answer()
 
-@router.message(RealTradeForm.link_url)
+@dp.message(RealTradeForm.link_url)
 async def real_get_link(msg: Message, state: FSMContext):
     url = msg.text
     await state.update_data(link_url=url)
@@ -764,7 +845,7 @@ async def real_get_link(msg: Message, state: FSMContext):
     lang = get_user_lang(msg.from_user.id)
     await msg.answer(get_text(lang, "enter_timeframe"), reply_markup=back_kb(lang))
 
-@router.message(RealTradeForm.link_tf)
+@dp.message(RealTradeForm.link_tf)
 async def real_get_tf(msg: Message, state: FSMContext):
     tf = msg.text
     data = await state.get_data()
@@ -779,7 +860,7 @@ async def real_get_tf(msg: Message, state: FSMContext):
     lang = get_user_lang(msg.from_user.id)
     await msg.answer(get_text(lang, "link_saved"), reply_markup=yesno_kb(lang))
 
-@router.message(RealTradeForm.trade_date)
+@dp.message(RealTradeForm.trade_date)
 async def real_date(msg: Message, state: FSMContext):
     lang = get_user_lang(msg.from_user.id)
     dstr = msg.text.strip().lower()
@@ -795,7 +876,7 @@ async def real_date(msg: Message, state: FSMContext):
     await state.set_state(RealTradeForm.emotion)
     await msg.answer(get_text(lang, "enter_emotion"), reply_markup=emotion_kb(lang))
 
-@router.callback_query(F.data.startswith("emotion_"))
+@dp.callback_query(F.data.startswith("emotion_"))
 async def real_emotion(call: CallbackQuery, state: FSMContext):
     emotion_map = {
         "emotion_calm": "😊 Спокойствие",
@@ -807,7 +888,6 @@ async def real_emotion(call: CallbackQuery, state: FSMContext):
     emotion = emotion_map.get(call.data, "😊 Спокойствие")
     data = await state.get_data()
     
-    # Расчёт P&L
     direction = data['direction']
     entry = data['entry_price']
     exit_p = data['exit_price']
@@ -817,7 +897,6 @@ async def real_emotion(call: CallbackQuery, state: FSMContext):
     else:
         pnl = (entry - exit_p) * vol
     
-    # Сохраняем сделку
     save_trade(
         user_id=call.from_user.id,
         asset=data['asset'],
@@ -837,8 +916,8 @@ async def real_emotion(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(get_text(lang, "trade_saved"), parse_mode="Markdown", reply_markup=real_menu_kb(lang))
     await call.answer()
 
-# ========== СТАТИСТИКА ==========
-@router.callback_query(F.data == "stats_menu")
+# ========== СТАТИСТИКА МЕНЮ ==========
+@dp.callback_query(F.data == "stats_menu")
 async def stats_menu(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
     await call.message.edit_text(get_text(lang, "stats_menu"), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -852,7 +931,7 @@ async def stats_menu(call: CallbackQuery):
     ]))
     await call.answer()
 
-@router.callback_query(F.data == "stats_all")
+@dp.callback_query(F.data == "stats_all")
 async def stats_all(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
@@ -861,7 +940,7 @@ async def stats_all(call: CallbackQuery):
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")]]))
     await call.answer()
 
-@router.callback_query(F.data == "stats_by_asset")
+@dp.callback_query(F.data == "stats_by_asset")
 async def stats_by_asset(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
@@ -874,7 +953,7 @@ async def stats_by_asset(call: CallbackQuery):
     await call.message.edit_text(get_text(lang, "select_asset"), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
     await call.answer()
 
-@router.callback_query(F.data.startswith("asset_"))
+@dp.callback_query(F.data.startswith("asset_"))
 async def show_asset_stats(call: CallbackQuery):
     asset = call.data.split("_")[1]
     uid = call.from_user.id
@@ -884,7 +963,7 @@ async def show_asset_stats(call: CallbackQuery):
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_by_asset")]]))
     await call.answer()
 
-@router.callback_query(F.data == "stats_by_date")
+@dp.callback_query(F.data == "stats_by_date")
 async def stats_by_date(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
     await call.message.edit_text(get_text(lang, "select_period"), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -895,7 +974,7 @@ async def stats_by_date(call: CallbackQuery):
     ]))
     await call.answer()
 
-@router.callback_query(F.data == "period_day")
+@dp.callback_query(F.data == "period_day")
 async def period_day(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
@@ -905,7 +984,7 @@ async def period_day(call: CallbackQuery):
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_by_date")]]))
     await call.answer()
 
-@router.callback_query(F.data == "period_week")
+@dp.callback_query(F.data == "period_week")
 async def period_week(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
@@ -915,7 +994,7 @@ async def period_week(call: CallbackQuery):
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_by_date")]]))
     await call.answer()
 
-@router.callback_query(F.data == "period_month")
+@dp.callback_query(F.data == "period_month")
 async def period_month(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
@@ -925,7 +1004,7 @@ async def period_month(call: CallbackQuery):
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_by_date")]]))
     await call.answer()
 
-@router.callback_query(F.data == "stats_by_emotion")
+@dp.callback_query(F.data == "stats_by_emotion")
 async def stats_by_emotion(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
@@ -945,7 +1024,7 @@ async def stats_by_emotion(call: CallbackQuery):
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")]]))
     await call.answer()
 
-@router.callback_query(F.data == "stats_recent")
+@dp.callback_query(F.data == "stats_recent")
 async def stats_recent(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
@@ -961,7 +1040,7 @@ async def stats_recent(call: CallbackQuery):
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")]]))
     await call.answer()
 
-@router.callback_query(F.data == "stats_sort")
+@dp.callback_query(F.data == "stats_sort")
 async def stats_sort(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
     await call.message.edit_text(get_text(lang, "stats_sort"), parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -971,7 +1050,7 @@ async def stats_sort(call: CallbackQuery):
     ]))
     await call.answer()
 
-@router.callback_query(F.data == "sort_newest")
+@dp.callback_query(F.data == "sort_newest")
 async def sort_newest(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
@@ -980,7 +1059,7 @@ async def sort_newest(call: CallbackQuery):
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=get_text(lang, "back"), callback_data="stats_menu")]]))
     await call.answer()
 
-@router.callback_query(F.data == "sort_oldest")
+@dp.callback_query(F.data == "sort_oldest")
 async def sort_oldest(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
@@ -990,7 +1069,7 @@ async def sort_oldest(call: CallbackQuery):
     await call.answer()
 
 # ========== EXCEL КНОПКИ ==========
-@router.callback_query(F.data == "get_real_excel")
+@dp.callback_query(F.data == "get_real_excel")
 async def get_real_excel(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
@@ -1003,7 +1082,7 @@ async def get_real_excel(call: CallbackQuery):
     os.remove(fname)
     await call.answer()
 
-@router.callback_query(F.data == "get_backtest_excel")
+@dp.callback_query(F.data == "get_backtest_excel")
 async def get_backtest_excel(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
@@ -1017,13 +1096,13 @@ async def get_backtest_excel(call: CallbackQuery):
     await call.answer()
 
 # ========== ОЧИСТКА ==========
-@router.callback_query(F.data == "clear_confirm")
+@dp.callback_query(F.data == "clear_confirm")
 async def clear_confirm(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
     await call.message.edit_text("⚠️ Удалить все сделки?", reply_markup=confirm_kb(lang))
     await call.answer()
 
-@router.callback_query(F.data == "clear_yes")
+@dp.callback_query(F.data == "clear_yes")
 async def clear_yes(call: CallbackQuery):
     uid = call.from_user.id
     lang = get_user_lang(uid)
@@ -1031,8 +1110,8 @@ async def clear_yes(call: CallbackQuery):
     await call.message.edit_text(get_text(lang, "cleared"), reply_markup=real_menu_kb(lang))
     await call.answer()
 
-# ========== БЭКТЕСТ (упрощённо, без полного диалога) ==========
-@router.callback_query(F.data == "add_backtest_trade")
+# ========== БЭКТЕСТ (упрощённо) ==========
+@dp.callback_query(F.data == "add_backtest_trade")
 async def add_backtest(call: CallbackQuery, state: FSMContext):
     await state.clear()
     await state.set_state(BacktestForm.period_start)
@@ -1040,7 +1119,7 @@ async def add_backtest(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(get_text(lang, "bt_period_start"), reply_markup=back_kb(lang))
     await call.answer()
 
-@router.message(BacktestForm.period_start)
+@dp.message(BacktestForm.period_start)
 async def bt_start(msg: Message, state: FSMContext):
     try:
         d = datetime.strptime(msg.text.strip(), "%d.%m.%Y").strftime("%Y-%m-%d")
@@ -1052,7 +1131,7 @@ async def bt_start(msg: Message, state: FSMContext):
         lang = get_user_lang(msg.from_user.id)
         await msg.answer(get_text(lang, "error_date"))
 
-@router.message(BacktestForm.period_end)
+@dp.message(BacktestForm.period_end)
 async def bt_end(msg: Message, state: FSMContext):
     try:
         d = datetime.strptime(msg.text.strip(), "%d.%m.%Y").strftime("%Y-%m-%d")
@@ -1064,21 +1143,21 @@ async def bt_end(msg: Message, state: FSMContext):
         lang = get_user_lang(msg.from_user.id)
         await msg.answer(get_text(lang, "error_date"))
 
-@router.message(BacktestForm.timeframe)
+@dp.message(BacktestForm.timeframe)
 async def bt_tf(msg: Message, state: FSMContext):
     await state.update_data(timeframe=msg.text.upper())
     await state.set_state(BacktestForm.asset)
     lang = get_user_lang(msg.from_user.id)
     await msg.answer(get_text(lang, "enter_asset"), reply_markup=back_kb(lang))
 
-@router.message(BacktestForm.asset)
+@dp.message(BacktestForm.asset)
 async def bt_asset(msg: Message, state: FSMContext):
     await state.update_data(asset=msg.text.upper())
     await state.set_state(BacktestForm.direction)
     lang = get_user_lang(msg.from_user.id)
     await msg.answer(get_text(lang, "choose_direction"), reply_markup=direction_kb(lang))
 
-@router.message(BacktestForm.entry_price)
+@dp.message(BacktestForm.entry_price)
 async def bt_entry(msg: Message, state: FSMContext):
     try:
         await state.update_data(entry_price=float(msg.text.replace(",", ".")))
@@ -1089,7 +1168,7 @@ async def bt_entry(msg: Message, state: FSMContext):
         lang = get_user_lang(msg.from_user.id)
         await msg.answer(get_text(lang, "error_number"))
 
-@router.message(BacktestForm.exit_price)
+@dp.message(BacktestForm.exit_price)
 async def bt_exit(msg: Message, state: FSMContext):
     try:
         exit_p = float(msg.text.replace(",", "."))
@@ -1101,7 +1180,7 @@ async def bt_exit(msg: Message, state: FSMContext):
         lang = get_user_lang(msg.from_user.id)
         await msg.answer(get_text(lang, "error_number"))
 
-@router.message(BacktestForm.link_chart)
+@dp.message(BacktestForm.link_chart)
 async def bt_link(msg: Message, state: FSMContext):
     link = msg.text if msg.text != "0" else "-"
     data = await state.get_data()
@@ -1136,8 +1215,13 @@ async def bt_link(msg: Message, state: FSMContext):
 async def set_commands(bot: Bot):
     await bot.set_my_commands([
         BotCommand(command="start", description="Главное меню"),
-        BotCommand(command="get_real", description="Excel реальная торговля"),
-        BotCommand(command="get_backtest", description="Excel бэктест"),
+        BotCommand(command="stats", description="Вся статистика"),
+        BotCommand(command="day", description="Статистика за день"),
+        BotCommand(command="week", description="Статистика за неделю"),
+        BotCommand(command="month", description="Статистика за месяц"),
+        BotCommand(command="clear", description="Очистить журнал"),
+        BotCommand(command="get_real", description="Excel (реальная торговля)"),
+        BotCommand(command="get_backtest", description="Excel (бэктест)"),
     ])
 
 async def main():
@@ -1145,9 +1229,7 @@ async def main():
     init_dbs()
     bot = Bot(token=BOT_TOKEN)
     await set_commands(bot)
-    dp = Dispatcher()
-    dp.include_router(router)
-    print("✅ Торговый бот запущен!")
+    print("✅ Торговый бот запущен! Все команды работают.")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
