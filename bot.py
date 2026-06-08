@@ -13,7 +13,7 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
 # ========== КОНФИГ ==========
-BOT_TOKEN = "8584035526:AAG8Q15ym8TONEAOH4_8_eQaXnsV4VhhIYs"
+BOT_TOKEN = "8803530037:AAHVuMAb6gIzGXBKH8qbteZtFyttz6_hzh0"
 DB_NAME = "trades.db"
 BT_DB_NAME = "backtests.db"
 TRADES_PER_PAGE = 10
