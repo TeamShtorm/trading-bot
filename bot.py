@@ -28,12 +28,14 @@ TEXTS = {
         "excel": "📎 Excel",
         "clear": "🗑 Clear",
         "settings": "⚙️ Settings",
+        "support": "📞 Support",
         "back": "🔙 Back",
         "yes": "✅ Yes",
         "no": "❌ No",
         "confirm_clear": "⚠️ YES, DELETE ALL",
         "cleared": "🗑 Journal cleared.",
         "no_data": "📭 No data.",
+        "no_data_add_trade": "📭 No data. Add your first trade via ➕ Add Trade.",
         "enter_asset": "📝 Enter ticker (BTC, ETH, TON, AAPL):",
         "choose_direction": "📈 Choose direction:",
         "long": "🟢 LONG",
@@ -51,7 +53,7 @@ TEXTS = {
         "link_saved": "✅ Link saved! Add another?",
         "enter_date": "📅 Enter date (DD.MM.YYYY) or 'today':",
         "trade_saved": "✅ Trade saved!",
-        "enter_emotion": "😊 What emotion did you feel? (calm/fear/greed/tilt/confidence):",
+        "enter_emotion": "😊 What emotion did you feel?",
         "bt_period_start": "📅 Enter START date (DD.MM.YYYY):",
         "bt_period_end": "📅 Enter END date (DD.MM.YYYY):",
         "bt_timeframe": "⏱ Enter timeframe (M5, H1, H4, D1, W1):",
@@ -71,9 +73,7 @@ TEXTS = {
         "select_language": "🌐 Select language:",
         "language_set": "✅ Language set: English",
         "language_set_ru": "✅ Language set: Russian",
-        "support_info": "📞 **Support**\n\nContact: @your_username",
-        "change_lang": "🌐 Change language",
-        "support": "📞 Support",
+        "support_info": "📞 **Support**\n\nIf you have any questions, problems, or suggestions — write to our support channel:\n\n👉 **@TJsupport_bot**\n\n**How to get help:**\n1. Open the channel\n2. Read the pinned post\n3. Write your question in the **comments** under the pinned post\n4. Describe the problem in detail, attach a screenshot if possible\n\nWe will reply as soon as possible!\n\n📌 **For quick processing, include your Telegram ID** (you can get it from @userinfobot).",
         "settings_menu": "⚙️ **Settings**",
         "stats_menu": "📊 **Statistics Menu**\n\nSelect statistic type:",
         "stats_all": "📈 All Statistics",
@@ -84,6 +84,9 @@ TEXTS = {
         "stats_sort": "🔄 Sort (Newest/Oldest)",
         "stats_back": "🔙 Back to Mode Menu",
         "stats_header": "📊 Your statistics",
+        "stats_today": "📆 Today's statistics",
+        "stats_week": "📅 Weekly statistics",
+        "stats_month": "📊 Monthly statistics",
         "total_trades": "📋 Total trades: {total}",
         "wins": "✅ Winning: {wins}",
         "losses": "❌ Losing: {losses}",
@@ -116,7 +119,9 @@ TEXTS = {
         "recent_trades": "🕒 **Recent trades** (last {count}):",
         "sort_newest": "📅 Newest first",
         "sort_oldest": "📅 Oldest first",
-        "bt_trade_detail": "📋 **Backtest #{id}**\n\nAsset: {asset}\nDirection: {direction}\nEntry: ${entry}\nExit: ${exit}\nP&L: ${pnl} ({r:.2f}R)\nQuality: {quality}/5\nSetup: {setup}\nTrigger: {trigger}\nDate: {date}"
+        "bt_trade_detail": "📋 **Backtest #{id}**\n\nAsset: {asset}\nDirection: {direction}\nEntry: ${entry}\nExit: ${exit}\nP&L: ${pnl} ({r:.2f}R)\nQuality: {quality}/5\nSetup: {setup}\nTrigger: {trigger}\nDate: {date}",
+        "excel_ready": "📊 Your report",
+        "change_lang": "🌐 Change language"
     },
     "ru": {
         "select_mode": "🎛 **Выберите режим работы:**",
@@ -127,12 +132,14 @@ TEXTS = {
         "excel": "📎 Excel",
         "clear": "🗑 Очистить",
         "settings": "⚙️ Настройки",
+        "support": "📞 Поддержка",
         "back": "🔙 Назад",
         "yes": "✅ Да",
         "no": "❌ Нет",
         "confirm_clear": "⚠️ ДА, УДАЛИТЬ ВСЁ",
         "cleared": "🗑 Журнал очищен.",
         "no_data": "📭 Нет данных.",
+        "no_data_add_trade": "📭 Нет данных. Добавьте первую сделку через меню ➕ Сделка.",
         "enter_asset": "📝 Введите тикер (BTC, ETH, TON, AAPL):",
         "choose_direction": "📈 Выберите направление:",
         "long": "🟢 LONG",
@@ -150,7 +157,7 @@ TEXTS = {
         "link_saved": "✅ Ссылка сохранена! Добавить ещё?",
         "enter_date": "📅 Введите дату (ДД.ММ.ГГГГ) или 'сегодня':",
         "trade_saved": "✅ Сделка сохранена!",
-        "enter_emotion": "😊 Какие эмоции были? (calm/fear/greed/tilt/confidence):",
+        "enter_emotion": "😊 Какие эмоции были?",
         "bt_period_start": "📅 Введите НАЧАЛО периода (ДД.ММ.ГГГГ):",
         "bt_period_end": "📅 Введите КОНЕЦ периода (ДД.ММ.ГГГГ):",
         "bt_timeframe": "⏱ Введите таймфрейм (M5, H1, H4, D1, W1):",
@@ -170,9 +177,7 @@ TEXTS = {
         "select_language": "🌐 Выберите язык:",
         "language_set": "✅ Язык установлен: английский",
         "language_set_ru": "✅ Язык установлен: русский",
-        "support_info": "📞 **Поддержка**\n\nПо вопросам пишите: @ваш_username",
-        "change_lang": "🌐 Сменить язык",
-        "support": "📞 Поддержка",
+        "support_info": "📞 **Поддержка**\n\nЕсли у вас есть вопросы, проблемы или предложения — пишите в наш канал поддержки:\n\n👉 **@TJsupport_bot**\n\n**Как получить помощь:**\n1. Откройте канал\n2. Прочитайте закреплённое сообщение\n3. Напишите свой вопрос в **комментариях** под закреплённым постом\n4. Опишите проблему подробно, приложите скриншот\n\nМы ответим как можно скорее!\n\n📌 **Для быстрой обработки укажите ваш Telegram ID** (можно узнать у @userinfobot).",
         "settings_menu": "⚙️ **Настройки**",
         "stats_menu": "📊 **Меню статистики**\n\nВыберите тип статистики:",
         "stats_all": "📈 Вся статистика",
@@ -183,6 +188,9 @@ TEXTS = {
         "stats_sort": "🔄 Сортировка (Новые/Старые)",
         "stats_back": "🔙 Назад в меню режима",
         "stats_header": "📊 Ваша статистика",
+        "stats_today": "📆 Статистика за сегодня",
+        "stats_week": "📅 Статистика за неделю",
+        "stats_month": "📊 Статистика за месяц",
         "total_trades": "📋 Всего сделок: {total}",
         "wins": "✅ Прибыльных: {wins}",
         "losses": "❌ Убыточных: {losses}",
@@ -215,7 +223,9 @@ TEXTS = {
         "recent_trades": "🕒 **Недавние сделки** (последние {count}):",
         "sort_newest": "📅 Сначала новые",
         "sort_oldest": "📅 Сначала старые",
-        "bt_trade_detail": "📋 **Бэктест #{id}**\n\nАктив: {asset}\nНаправление: {direction}\nВход: ${entry}\nВыход: ${exit}\nP&L: ${pnl} ({r:.2f}R)\nКачество: {quality}/5\nСетап: {setup}\nТриггер: {trigger}\nДата: {date}"
+        "bt_trade_detail": "📋 **Бэктест #{id}**\n\nАктив: {asset}\nНаправление: {direction}\nВход: ${entry}\nВыход: ${exit}\nP&L: ${pnl} ({r:.2f}R)\nКачество: {quality}/5\nСетап: {setup}\nТриггер: {trigger}\nДата: {date}",
+        "excel_ready": "📊 Ваш отчёт",
+        "change_lang": "🌐 Сменить язык"
     }
 }
 
@@ -484,7 +494,6 @@ def get_real_stats_text(df, lang, title_key="stats_header"):
     sum_profit = df[df['pnl']>0]['pnl'].sum()
     sum_loss = abs(df[df['pnl']<0]['pnl'].sum())
     pf = sum_profit/sum_loss if sum_loss else sum_profit
-    # Статистика по эмоциям
     emotions = df['emotion'].value_counts().to_dict()
     emotion_text = "\n".join([f"{e}: {c}" for e, c in emotions.items()]) if emotions else get_text(lang, "no_data")
     return (
@@ -537,6 +546,8 @@ def mode_menu_kb(lang, mode):
         [InlineKeyboardButton(text=get_text(lang, "stats"), callback_data="stats_menu")],
         [InlineKeyboardButton(text=get_text(lang, "excel"), callback_data="get_excel")],
         [InlineKeyboardButton(text=get_text(lang, "clear"), callback_data="clear_confirm")],
+        [InlineKeyboardButton(text=get_text(lang, "settings"), callback_data="settings_menu"),
+         InlineKeyboardButton(text=get_text(lang, "support"), callback_data="support")],
         [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_mode")]
     ])
 
@@ -548,7 +559,6 @@ def stats_menu_kb(lang):
         [InlineKeyboardButton(text=get_text(lang, "stats_recent"), callback_data="stats_recent")],
         [InlineKeyboardButton(text=get_text(lang, "stats_sort"), callback_data="stats_sort")],
     ]
-    # Добавляем эмоции только для реальной торговли (определим позже)
     return InlineKeyboardMarkup(inline_keyboard=buttons + [[InlineKeyboardButton(text=get_text(lang, "stats_back"), callback_data="back_to_mode_menu")]])
 
 def stats_menu_kb_with_emotions(lang):
@@ -731,7 +741,7 @@ async def set_lang(call: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "support")
 async def support(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
-    await call.message.edit_text(get_text(lang, "support_info"), parse_mode="Markdown", reply_markup=settings_kb(lang))
+    await call.message.edit_text(get_text(lang, "support_info"), parse_mode="Markdown", reply_markup=mode_menu_kb(lang, "real"))
     await call.answer()
 
 @router.callback_query(F.data == "back_mode")
@@ -746,7 +756,7 @@ async def back_to_mode_menu(call: CallbackQuery, state: FSMContext):
     await state.clear()
     lang = get_user_lang(call.from_user.id)
     mode = (await state.get_data()).get('mode', 'real')
-    await call.message.edit_text(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_kb(lang))
+    await call.message.edit_text(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_menu_kb(lang, mode))
     await call.answer()
 
 # ========== ВЫБОР РЕЖИМА ==========
@@ -855,7 +865,7 @@ async def show_period_stats(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(txt, parse_mode="Markdown", reply_markup=period_kb(lang))
     await call.answer()
 
-# ========== ПО ЭМОЦИЯМ (только реальная торговля) ==========
+# ========== ПО ЭМОЦИЯМ ==========
 @router.callback_query(F.data == "stats_by_emotion")
 async def stats_by_emotion(call: CallbackQuery):
     lang = get_user_lang(call.from_user.id)
@@ -1306,24 +1316,50 @@ async def bt_link(msg: Message, state: FSMContext):
     await msg.answer("✅ Backtest saved!", reply_markup=mode_menu_kb(lang, "backtest"))
 
 # ========== EXCEL И ОЧИСТКА ==========
-@router.callback_query(F.data == "get_excel")
-async def get_excel(call: CallbackQuery, state: FSMContext):
-    uid = call.from_user.id
+@router.message(Command("get"))
+async def cmd_get(msg: Message, state: FSMContext):
+    uid = msg.from_user.id
+    lang = get_user_lang(uid)
     data = await state.get_data()
     mode = data.get('mode', 'real')
+    
     if mode == "real":
         df = get_trades(uid, mode="real")
         if df.empty:
-            await call.answer(get_text(get_user_lang(uid), "no_data"), show_alert=True)
+            await msg.answer(get_text(lang, "no_data_add_trade"))
             return
         fname = export_real_to_excel(df, uid)
     else:
         df = get_backtests(uid)
         if df.empty:
-            await call.answer(get_text(get_user_lang(uid), "no_data"), show_alert=True)
+            await msg.answer(get_text(lang, "no_data_add_trade"))
             return
         fname = export_backtest_to_excel(df, uid)
-    await call.message.answer_document(FSInputFile(fname), caption="📊 Your report")
+    
+    await msg.answer_document(FSInputFile(fname), caption=get_text(lang, "excel_ready"))
+    os.remove(fname)
+
+@router.callback_query(F.data == "get_excel")
+async def get_excel(call: CallbackQuery, state: FSMContext):
+    uid = call.from_user.id
+    lang = get_user_lang(uid)
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
+    
+    if mode == "real":
+        df = get_trades(uid, mode="real")
+        if df.empty:
+            await call.answer(get_text(lang, "no_data_add_trade"), show_alert=True)
+            return
+        fname = export_real_to_excel(df, uid)
+    else:
+        df = get_backtests(uid)
+        if df.empty:
+            await call.answer(get_text(lang, "no_data_add_trade"), show_alert=True)
+            return
+        fname = export_backtest_to_excel(df, uid)
+    
+    await call.message.answer_document(FSInputFile(fname), caption=get_text(lang, "excel_ready"))
     os.remove(fname)
     await call.answer()
 
@@ -1346,6 +1382,70 @@ async def clear_yes(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(get_text(lang, "cleared"), reply_markup=mode_menu_kb(lang, mode))
     await call.answer()
 
+# ========== КОМАНДЫ ==========
+@router.message(Command("stats"))
+async def cmd_stats(msg: Message, state: FSMContext):
+    uid = msg.from_user.id
+    lang = get_user_lang(uid)
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
+    sort_order = data.get('sort_order', 'DESC')
+    if mode == "real":
+        df = get_trades(uid, mode="real", sort_by_date=sort_order)
+        txt = get_real_stats_text(df, lang, "stats_header")
+    else:
+        df = get_backtests(uid)
+        txt = get_backtest_stats_text(df, lang)
+    await msg.answer(txt, parse_mode="Markdown")
+
+@router.message(Command("day"))
+async def cmd_day(msg: Message, state: FSMContext):
+    uid = msg.from_user.id
+    lang = get_user_lang(uid)
+    today = datetime.now().strftime("%Y-%m-%d")
+    df = get_trades(uid, mode="real", start_date=today)
+    if df.empty:
+        await msg.answer(get_text(lang, "no_data_add_trade"))
+        return
+    txt = get_real_stats_text(df, lang, "stats_today")
+    await msg.answer(txt, parse_mode="Markdown")
+
+@router.message(Command("week"))
+async def cmd_week(msg: Message, state: FSMContext):
+    uid = msg.from_user.id
+    lang = get_user_lang(uid)
+    week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    df = get_trades(uid, mode="real", start_date=week_ago)
+    if df.empty:
+        await msg.answer(get_text(lang, "no_data_add_trade"))
+        return
+    txt = get_real_stats_text(df, lang, "stats_week")
+    await msg.answer(txt, parse_mode="Markdown")
+
+@router.message(Command("month"))
+async def cmd_month(msg: Message, state: FSMContext):
+    uid = msg.from_user.id
+    lang = get_user_lang(uid)
+    month_ago = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    df = get_trades(uid, mode="real", start_date=month_ago)
+    if df.empty:
+        await msg.answer(get_text(lang, "no_data_add_trade"))
+        return
+    txt = get_real_stats_text(df, lang, "stats_month")
+    await msg.answer(txt, parse_mode="Markdown")
+
+@router.message(Command("clear"))
+async def cmd_clear(msg: Message, state: FSMContext):
+    uid = msg.from_user.id
+    lang = get_user_lang(uid)
+    data = await state.get_data()
+    mode = data.get('mode', 'real')
+    if mode == "real":
+        clear_trades(uid, mode="real")
+    else:
+        clear_backtests(uid)
+    await msg.answer(get_text(lang, "cleared"))
+
 # ========== ЗАПУСК ==========
 async def main():
     global bot
@@ -1354,13 +1454,16 @@ async def main():
     await bot.set_my_commands([
         BotCommand(command="start", description="Start / Запуск"),
         BotCommand(command="settings", description="Settings / Настройки"),
-        BotCommand(command="stats", description="Statistics / Статистика"),
+        BotCommand(command="stats", description="All statistics / Вся статистика"),
+        BotCommand(command="day", description="Today / Сегодня"),
+        BotCommand(command="week", description="Week / Неделя"),
+        BotCommand(command="month", description="Month / Месяц"),
         BotCommand(command="get", description="Excel report / Excel отчёт"),
         BotCommand(command="clear", description="Clear journal / Очистить журнал"),
     ])
     dp = Dispatcher()
     dp.include_router(router)
-    print("✅ Бот запущен! Полное меню статистики с кнопками, недавние сделки, сортировка, эмоции.")
+    print("✅ Бот запущен! Поддержка добавлена в главное меню.")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
