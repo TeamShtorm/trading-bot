@@ -36,7 +36,7 @@ TEXTS = {
         "confirm_clear": "⚠️ ДА, УДАЛИТЬ ВСЁ",
         "cleared": "🗑 Журнал очищен.",
         "no_data": "📭 Нет данных.",
-        "no_data_add_trade": "📭 Нет данных. Добавьте первую сделку через меню ➕ Сделка.",
+        "no_data_add_trade": "📭 Нет данных. Добавьте первую сделку через /new или меню ➕ Сделка.",
         "enter_asset": "📝 Введите тикер (BTC, ETH, TON, AAPL):",
         "choose_direction": "📈 Выберите направление:",
         "long": "🟢 LONG",
@@ -128,7 +128,7 @@ TEXTS = {
         "confirm_clear": "⚠️ YES, DELETE ALL",
         "cleared": "🗑 Journal cleared.",
         "no_data": "📭 No data.",
-        "no_data_add_trade": "📭 No data. Add your first trade via ➕ Add Trade.",
+        "no_data_add_trade": "📭 No data. Add your first trade via /new or ➕ Add Trade.",
         "enter_asset": "📝 Enter ticker (BTC, ETH, TON, AAPL):",
         "choose_direction": "📈 Choose direction:",
         "long": "🟢 LONG",
@@ -578,6 +578,15 @@ async def start_cmd(msg: Message, state: FSMContext):
         await msg.answer(get_text("ru", "select_language"), reply_markup=lang_kb())
         return
     await msg.answer(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_kb(lang))
+
+# Команда /new - создание новой сделки (реальная торговля)
+@dp.message(Command("new"))
+async def new_trade_cmd(msg: Message, state: FSMContext):
+    uid = msg.from_user.id
+    lang = get_user_lang(uid)
+    await state.clear()
+    await state.set_state(RealTradeForm.asset)
+    await msg.answer(get_text(lang, "enter_asset"), reply_markup=back_kb(lang))
 
 @dp.message(Command("stats"))
 async def cmd_stats(msg: Message):
@@ -1215,6 +1224,7 @@ async def bt_link(msg: Message, state: FSMContext):
 async def set_commands(bot: Bot):
     await bot.set_my_commands([
         BotCommand(command="start", description="Главное меню"),
+        BotCommand(command="new", description="➕ Новая сделка"),
         BotCommand(command="stats", description="Вся статистика"),
         BotCommand(command="day", description="Статистика за день"),
         BotCommand(command="week", description="Статистика за неделю"),
@@ -1229,7 +1239,7 @@ async def main():
     init_dbs()
     bot = Bot(token=BOT_TOKEN)
     await set_commands(bot)
-    print("✅ Торговый бот запущен! Все команды работают.")
+    print("✅ Торговый бот запущен! Команда /new добавлена.")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
