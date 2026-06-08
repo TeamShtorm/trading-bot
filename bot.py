@@ -554,7 +554,8 @@ async def set_lang(call: CallbackQuery, state: FSMContext):
     lang = call.data.split("_")[1]
     set_user_lang(call.from_user.id, lang)
     await call.message.delete()
-    await start_cmd(call.message, state)
+    # Отправляем новое сообщение с выбором режима, без повторного выбора языка
+    await call.message.answer(get_text(lang, "select_mode"), parse_mode="Markdown", reply_markup=mode_kb(lang))
     await call.answer()
 
 @router.callback_query(F.data == "back_mode")
@@ -573,6 +574,7 @@ async def settings(call: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "change_lang")
 async def change_lang(call: CallbackQuery):
+    # При смене языка из настроек — показываем выбор языка
     await call.message.edit_text(get_text("ru", "select_language"), reply_markup=lang_kb())
     await call.answer()
 
