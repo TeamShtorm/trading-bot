@@ -134,7 +134,7 @@ def clear_trades(user_id):
 # ==================================================
 def init_backtest_db():
     conn = sqlite3.connect(BT_DB_NAME)
-    # Таблица периодов бэктеста
+    # Таблица периодов бэктеста (с датами начала и конца)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS backtest_periods (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -142,6 +142,8 @@ def init_backtest_db():
             name TEXT,
             asset TEXT,
             initial_balance REAL,
+            period_start TEXT,
+            period_end TEXT,
             created_at TEXT
         )
     """)
@@ -173,14 +175,43 @@ def init_backtest_db():
     """)
     conn.commit()
     conn.close()
+    
+    # Таблица таймфреймов и ссылок для периода
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS backtest_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            period_id INTEGER,
+            timeframe TEXT,
+            link TEXT,
+            FOREIGN KEY (period_id) REFERENCES backtest_periods(id)
+        )
+    """)
+    # Таблица сделок внутри бэктеста
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS backtest_trades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            period_id INTEGER,
+            trade_date TEXT,
+            direction TEXT,
+            entry_price REAL,
+            exit_price REAL,
+            volume REAL,
+            pnl REAL,
+            result TEXT,
+            comment TEXT,
+            FOREIGN KEY (period_id) REFERENCES backtest_periods(id)
+        )
+    """)
+    conn.commit()
+    conn.close()
 
-def save_backtest_period(user_id, name, asset, initial_balance):
+def save_backtest_period(user_id, name, asset, initial_balance, period_start, period_end):
     conn = sqlite3.connect(BT_DB_NAME)
     cur = conn.cursor()
     cur.execute("""
-        INSERT INTO backtest_periods (user_id, name, asset, initial_balance, created_at)
-        VALUES (?, ?, ?, ?, ?)
-    """, (user_id, name, asset, initial_balance, datetime.now().isoformat()))
+        INSERT INTO backtest_periods (user_id, name, asset, initial_balance, period_start, period_end, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (user_id, name, asset, initial_balance, period_start, period_end, datetime.now().isoformat()))
     conn.commit()
     period_id = cur.lastrowid
     conn.close()
@@ -478,8 +509,8 @@ def real_menu():
 
 def backtest_menu():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📋 Периоды", callback_data="backtest_list_periods")],
         [InlineKeyboardButton(text="➕ Новый период", callback_data="backtest_add_period")],
+        [InlineKeyboardButton(text="📋 Периоды", callback_data="backtest_list_periods")],
         [InlineKeyboardButton(text="📊 Статистика", callback_data="backtest_stats_list")],
         [InlineKeyboardButton(text="📎 Excel", callback_data="backtest_excel_list")],
         [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_mode_selection")]
@@ -871,30 +902,41 @@ async def real_direction_short(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text("💰 Введите цену входа:", reply_markup=cancel_real_kb())
     await call.answer()
 
+def parse_number(text: str) -> float:
+    """Очищает строку и преобразует в число"""
+    cleaned = text.strip().replace(",", ".").replace(" ", "")
+    return float(cleaned)
+
 @dp.message(TradeForm.entry_price)
 async def real_entry(msg: Message, state: FSMContext):
     try:
-        val = float(msg.text.replace(",", "."))
+        val = parse_number(msg.text)
+        if val <= 0:
+            raise ValueError
         await state.update_data(entry_price=val)
         await state.set_state(TradeForm.exit_price)
         await msg.answer("💰 Введите цену выхода:", reply_markup=cancel_real_kb())
     except ValueError:
-        await msg.answer("❌ Ошибка! Введите число.", reply_markup=cancel_real_kb())
+        await msg.answer("❌ Ошибка! Введите число (например: 56700.50 или 0.25)", reply_markup=cancel_real_kb())
 
 @dp.message(TradeForm.exit_price)
 async def real_exit(msg: Message, state: FSMContext):
     try:
-        val = float(msg.text.replace(",", "."))
+        val = parse_number(msg.text)
+        if val <= 0:
+            raise ValueError
         await state.update_data(exit_price=val)
         await state.set_state(TradeForm.volume)
-        await msg.answer("📊 Введите объём позиции:", reply_markup=cancel_real_kb())
+        await msg.answer("📊 Введите объём позиции (например: 0.25 или 1000):", reply_markup=cancel_real_kb())
     except ValueError:
-        await msg.answer("❌ Ошибка! Введите число.", reply_markup=cancel_real_kb())
+        await msg.answer("❌ Ошибка! Введите число (например: 56700.50 или 0.25)", reply_markup=cancel_real_kb())
 
 @dp.message(TradeForm.volume)
 async def real_volume(msg: Message, state: FSMContext):
     try:
-        vol = float(msg.text.replace(",", "."))
+        vol = parse_number(msg.text)
+        if vol <= 0:
+            raise ValueError
         data = await state.get_data()
         direction = data['direction']
         entry = data['entry_price']
@@ -907,7 +949,7 @@ async def real_volume(msg: Message, state: FSMContext):
         await state.set_state(TradeForm.result)
         await msg.answer("🎯 Как закрылась сделка?", reply_markup=real_result_kb())
     except ValueError:
-        await msg.answer("❌ Ошибка! Введите число.", reply_markup=cancel_real_kb())
+        await msg.answer("❌ Ошибка! Введите число (например: 0.25 или 1000)", reply_markup=cancel_real_kb())
 
 @dp.callback_query(F.data == "real_res_TAKE")
 async def real_result_take(call: CallbackQuery, state: FSMContext):
@@ -1272,53 +1314,14 @@ async def show_emotion_stats(call: CallbackQuery, emotion: str):
     await call.answer()
 
 # ==================================================
-# БЛОК 13: ОБРАБОТЧИКИ EXCEL И ОЧИСТКИ
-# ==================================================
-@dp.callback_query(F.data == "real_excel")
-async def real_excel(call: CallbackQuery):
-    df = get_trades_filtered(call.from_user.id)
-    if df.empty:
-        await call.answer("📭 Нет данных", show_alert=True)
-        return
-    fname = export_real_to_excel(df, call.from_user.id)
-    await call.message.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт (реальная торговля)")
-    os.remove(fname)
-    await call.answer()
-
-@dp.callback_query(F.data == "backtest_excel")
-async def backtest_excel(call: CallbackQuery):
-    df = get_backtests(call.from_user.id)
-    if df.empty:
-        await call.answer("📭 Нет данных", show_alert=True)
-        return
-    fname = export_backtest_to_excel(df, call.from_user.id)
-    await call.message.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт (бэктест)")
-    os.remove(fname)
-    await call.answer()
-
-@dp.callback_query(F.data == "real_clear")
-async def real_clear_confirm(call: CallbackQuery):
-    await call.message.edit_text("⚠️ Удалить ВСЕ сделки реальной торговли?", reply_markup=confirm_kb())
-    await call.answer()
-
-@dp.callback_query(F.data == "backtest_clear")
-async def backtest_clear_confirm(call: CallbackQuery):
-    await call.message.edit_text("⚠️ Удалить ВСЕ бэктесты?", reply_markup=confirm_kb())
-    await call.answer()
-
-@dp.callback_query(F.data == "clear_yes")
-async def clear_yes(call: CallbackQuery):
-    clear_trades(call.from_user.id)
-    await call.message.edit_text("🗑 Журнал реальной торговли очищен!", reply_markup=real_menu())
-    await call.answer()
-
-# ==================================================
 # БЛОК 14: ОБРАБОТЧИКИ БЭКТЕСТА
 # ==================================================
 
 class BacktestPeriodForm(StatesGroup):
     name = State()
     asset = State()
+    period_start = State()
+    period_end = State()
     initial_balance = State()
 
 class BacktestTradeForm(StatesGroup):
@@ -1409,7 +1412,7 @@ async def bt_view_period(call: CallbackQuery):
         await call.answer("❌ Период не найден", show_alert=True)
         return
     
-    text = f"📊 Период: {period[2]}\n\n🪙 Актив: {period[3]}\n💰 Начальный баланс: ${period[4]:.2f}\n"
+    text = f"📊 Период: {period[2]}\n\n🪙 Актив: {period[3]}\n📅 Период: {period[5]} — {period[6]}\n💰 Начальный баланс: ${period[4]:.2f}\n"
     
     trades = get_backtest_trades(period_id)
     if trades:
@@ -1444,8 +1447,28 @@ async def bt_period_name(msg: Message, state: FSMContext):
 @dp.message(BacktestPeriodForm.asset)
 async def bt_period_asset(msg: Message, state: FSMContext):
     await state.update_data(asset=msg.text.upper())
-    await state.set_state(BacktestPeriodForm.initial_balance)
-    await msg.answer("💰 Введите начальный баланс для этого периода (в $):", reply_markup=back_kb())
+    await state.set_state(BacktestPeriodForm.period_start)
+    await msg.answer("📅 Введите ДАТУ НАЧАЛА периода (ДД.ММ.ГГГГ):", reply_markup=back_kb())
+
+@dp.message(BacktestPeriodForm.period_start)
+async def bt_period_start(msg: Message, state: FSMContext):
+    try:
+        d = datetime.strptime(msg.text.strip(), "%d.%m.%Y").strftime("%Y-%m-%d")
+        await state.update_data(period_start=d)
+        await state.set_state(BacktestPeriodForm.period_end)
+        await msg.answer("📅 Введите ДАТУ КОНЦА периода (ДД.ММ.ГГГГ):", reply_markup=back_kb())
+    except ValueError:
+        await msg.answer("❌ Ошибка! Введите дату в формате ДД.ММ.ГГГГ", reply_markup=back_kb())
+
+@dp.message(BacktestPeriodForm.period_end)
+async def bt_period_end(msg: Message, state: FSMContext):
+    try:
+        d = datetime.strptime(msg.text.strip(), "%d.%m.%Y").strftime("%Y-%m-%d")
+        await state.update_data(period_end=d)
+        await state.set_state(BacktestPeriodForm.initial_balance)
+        await msg.answer("💰 Введите начальный баланс для этого периода (в $):", reply_markup=back_kb())
+    except ValueError:
+        await msg.answer("❌ Ошибка! Введите дату в формате ДД.ММ.ГГГГ", reply_markup=back_kb())
 
 @dp.message(BacktestPeriodForm.initial_balance)
 async def bt_initial_balance(msg: Message, state: FSMContext):
@@ -1456,10 +1479,12 @@ async def bt_initial_balance(msg: Message, state: FSMContext):
             user_id=msg.from_user.id,
             name=data['name'],
             asset=data['asset'],
-            initial_balance=balance
+            initial_balance=balance,
+            period_start=data['period_start'],
+            period_end=data['period_end']
         )
         await state.clear()
-        await msg.answer(f"✅ Период '{data['name']}' создан!\n\n🪙 Актив: {data['asset']}\n💰 Баланс: ${balance:.2f}\n\nТеперь вы можете добавлять сделки в этот период.", reply_markup=backtest_menu())
+        await msg.answer(f"✅ Период '{data['name']}' создан!\n\n🪙 Актив: {data['asset']}\n📅 {data['period_start']} — {data['period_end']}\n💰 Баланс: ${balance:.2f}\n\nТеперь вы можете добавлять сделки в этот период.", reply_markup=backtest_menu())
     except ValueError:
         await msg.answer("❌ Ошибка! Введите число.", reply_markup=back_kb())
 
@@ -1544,7 +1569,9 @@ async def bt_export_excel(call: CallbackQuery):
     period_info = pd.DataFrame([{
         'period_name': period[2],
         'asset': period[3],
-        'initial_balance': period[4]
+        'initial_balance': period[4],
+        'period_start': period[5],
+        'period_end': period[6]
     }])
     
     fname = f"backtest_period_{period_id}.xlsx"
@@ -1634,25 +1661,33 @@ async def bt_trade_direction_short(call: CallbackQuery, state: FSMContext):
 @dp.message(BacktestTradeForm.entry_price)
 async def bt_trade_entry(msg: Message, state: FSMContext):
     try:
-        await state.update_data(entry_price=float(msg.text.replace(",", ".")))
+        val = parse_number(msg.text)
+        if val <= 0:
+            raise ValueError
+        await state.update_data(entry_price=val)
         await state.set_state(BacktestTradeForm.exit_price)
         await msg.answer("💰 Введите цену выхода:", reply_markup=cancel_backtest_kb())
     except ValueError:
-        await msg.answer("❌ Ошибка! Введите число.", reply_markup=cancel_backtest_kb())
+        await msg.answer("❌ Ошибка! Введите число (например: 56700.50 или 0.25)", reply_markup=cancel_backtest_kb())
 
 @dp.message(BacktestTradeForm.exit_price)
 async def bt_trade_exit(msg: Message, state: FSMContext):
     try:
-        await state.update_data(exit_price=float(msg.text.replace(",", ".")))
+        val = parse_number(msg.text)
+        if val <= 0:
+            raise ValueError
+        await state.update_data(exit_price=val)
         await state.set_state(BacktestTradeForm.volume)
-        await msg.answer("📊 Введите объём позиции:", reply_markup=cancel_backtest_kb())
+        await msg.answer("📊 Введите объём позиции (например: 0.25 или 1000):", reply_markup=cancel_backtest_kb())
     except ValueError:
-        await msg.answer("❌ Ошибка! Введите число.", reply_markup=cancel_backtest_kb())
+        await msg.answer("❌ Ошибка! Введите число (например: 56700.50 или 0.25)", reply_markup=cancel_backtest_kb())
 
 @dp.message(BacktestTradeForm.volume)
 async def bt_trade_volume(msg: Message, state: FSMContext):
     try:
-        vol = float(msg.text.replace(",", "."))
+        vol = parse_number(msg.text)
+        if vol <= 0:
+            raise ValueError
         data = await state.get_data()
         direction = data['direction']
         entry = data['entry_price']
@@ -1662,7 +1697,7 @@ async def bt_trade_volume(msg: Message, state: FSMContext):
         await state.set_state(BacktestTradeForm.result)
         await msg.answer("🎯 Как закрылась сделка?", reply_markup=backtest_result_kb())
     except ValueError:
-        await msg.answer("❌ Ошибка! Введите число.", reply_markup=cancel_backtest_kb())
+        await msg.answer("❌ Ошибка! Введите число (например: 0.25 или 1000)", reply_markup=cancel_backtest_kb())
 
 @dp.callback_query(F.data == "bt_res_TAKE")
 async def bt_trade_result_take(call: CallbackQuery, state: FSMContext):
@@ -1762,6 +1797,47 @@ async def bt_clear_period_execute(call: CallbackQuery, state: FSMContext):
         delete_backtest_period(period_id, call.from_user.id)
     await state.clear()
     await call.message.edit_text("🗑 Период удалён!", reply_markup=backtest_menu())
+    await call.answer()
+
+# ==================================================
+# БЛОК 13: ОБРАБОТЧИКИ EXCEL И ОЧИСТКИ
+# ==================================================
+@dp.callback_query(F.data == "real_excel")
+async def real_excel(call: CallbackQuery):
+    df = get_trades_filtered(call.from_user.id)
+    if df.empty:
+        await call.answer("📭 Нет данных", show_alert=True)
+        return
+    fname = export_real_to_excel(df, call.from_user.id)
+    await call.message.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт (реальная торговля)")
+    os.remove(fname)
+    await call.answer()
+
+@dp.callback_query(F.data == "backtest_excel")
+async def backtest_excel(call: CallbackQuery):
+    df = get_backtests(call.from_user.id)
+    if df.empty:
+        await call.answer("📭 Нет данных", show_alert=True)
+        return
+    fname = export_backtest_to_excel(df, call.from_user.id)
+    await call.message.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт (бэктест)")
+    os.remove(fname)
+    await call.answer()
+
+@dp.callback_query(F.data == "real_clear")
+async def real_clear_confirm(call: CallbackQuery):
+    await call.message.edit_text("⚠️ Удалить ВСЕ сделки реальной торговли?", reply_markup=confirm_kb())
+    await call.answer()
+
+@dp.callback_query(F.data == "backtest_clear")
+async def backtest_clear_confirm(call: CallbackQuery):
+    await call.message.edit_text("⚠️ Удалить ВСЕ бэктесты?", reply_markup=confirm_kb())
+    await call.answer()
+
+@dp.callback_query(F.data == "clear_yes")
+async def clear_yes(call: CallbackQuery):
+    clear_trades(call.from_user.id)
+    await call.message.edit_text("🗑 Журнал реальной торговли очищен!", reply_markup=real_menu())
     await call.answer()
 
 # ==================================================
