@@ -44,12 +44,10 @@ def init_dbs():
             emotion TEXT
         )
     """)
-    conn.close()
-    init_backtest_db()
-    conn = sqlite3.connect(DB_NAME)
     conn.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, lang TEXT DEFAULT 'ru')")
     conn.commit()
     conn.close()
+    init_backtest_db()
 
 def get_user_lang(user_id):
     conn = sqlite3.connect(DB_NAME)
@@ -231,8 +229,16 @@ def delete_backtest_period(period_id, user_id):
 
 def clear_backtest_periods(user_id):
     conn = sqlite3.connect(BT_DB_NAME)
-    conn.execute("DELETE FROM backtest_links WHERE period_id IN (SELECT id FROM backtest_periods WHERE user_id = ?)", (user_id,))
-    conn.execute("DELETE FROM backtest_trades WHERE period_id IN (SELECT id FROM backtest_periods WHERE user_id = ?)", (user_id,))
+    # Сначала получаем все period_id пользователя
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM backtest_periods WHERE user_id = ?", (user_id,))
+    period_ids = [row[0] for row in cur.fetchall()]
+    
+    # Удаляем ссылки и сделки для этих периодов
+    for pid in period_ids:
+        conn.execute("DELETE FROM backtest_links WHERE period_id = ?", (pid,))
+        conn.execute("DELETE FROM backtest_trades WHERE period_id = ?", (pid,))
+    
     conn.execute("DELETE FROM backtest_periods WHERE user_id = ?", (user_id,))
     conn.commit()
     conn.close()
@@ -823,7 +829,7 @@ async def cmd_start(msg: Message, state: FSMContext):
     await state.clear()
     uid = msg.from_user.id
     lang = get_user_lang(uid)
-    if not lang:
+    if lang is None or lang not in ['ru', 'en']:
         await msg.answer("🌐 Выберите язык / Choose language:", reply_markup=lang_kb())
         return
     await msg.answer("🎛 Выберите режим работы:", reply_markup=main_menu(lang))
@@ -832,6 +838,7 @@ async def cmd_start(msg: Message, state: FSMContext):
 async def set_lang(call: CallbackQuery, state: FSMContext):
     lang = call.data.split("_")[1]
     set_user_lang(call.from_user.id, lang)
+    await state.clear()
     await call.message.delete()
     await call.message.answer("🎛 Выберите режим работы:", reply_markup=main_menu(lang))
     await call.answer()
@@ -875,11 +882,6 @@ async def settings_menu(call: CallbackQuery):
 @dp.callback_query(F.data == "change_lang")
 async def change_lang(call: CallbackQuery):
     await call.message.edit_text("🌐 Выберите язык / Choose language:", reply_markup=lang_kb())
-    await call.answer()
-
-@dp.callback_query(F.data == "support")
-async def support(call: CallbackQuery):
-    await call.message.edit_text("📞 Поддержка\n\nПо вопросам пишите: @ваш_username", reply_markup=settings_menu_kb())
     await call.answer()
 
 # ---------- ОТМЕНА НЕЗАВЕРШЁННОЙ СДЕЛКИ (РЕАЛЬНАЯ ТОРГОВЛЯ) ----------
@@ -1334,6 +1336,32 @@ async def show_emotion_stats(call: CallbackQuery, emotion: str):
     await call.answer()
 
 # ==================================================
+# БЛОК 13: ОБРАБОТЧИКИ EXCEL И ОЧИСТКИ
+# ==================================================
+@dp.callback_query(F.data == "real_excel")
+async def real_excel(call: CallbackQuery):
+    df = get_trades_filtered(call.from_user.id)
+    if df.empty:
+        await call.answer("📭 Нет данных", show_alert=True)
+        return
+    fname = export_real_to_excel(df, call.from_user.id)
+    if fname:
+        await call.message.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт (реальная торговля)")
+        os.remove(fname)
+    await call.answer()
+
+@dp.callback_query(F.data == "real_clear")
+async def real_clear_confirm(call: CallbackQuery):
+    await call.message.edit_text("⚠️ Удалить ВСЕ сделки реальной торговли?", reply_markup=confirm_kb())
+    await call.answer()
+
+@dp.callback_query(F.data == "clear_yes")
+async def clear_yes(call: CallbackQuery):
+    clear_trades(call.from_user.id)
+    await call.message.edit_text("🗑 Журнал реальной торговли очищен!", reply_markup=real_menu())
+    await call.answer()
+
+# ==================================================
 # БЛОК 14: ОБРАБОТЧИКИ БЭКТЕСТА
 # ==================================================
 
@@ -1343,7 +1371,7 @@ async def back_to_period_menu(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     period_id = data.get('period_id')
     if period_id:
-        await bt_view_period(call)
+        await bt_view_period(call, state)
     else:
         await back_to_backtest_menu(call, state)
 
@@ -1380,33 +1408,135 @@ async def view_periods_page(call: CallbackQuery, state: FSMContext):
     await state.update_data(view_page=page)
     await show_periods_list(call, state, "view")
 
-# ========== ПРОСМОТР ПЕРИОДА ==========
+# ========== ПРОСМОТР ПЕРИОДА С ПАГИНАЦИЕЙ ==========
 @dp.callback_query(F.data.startswith("view_period_"))
-async def bt_view_period(call: CallbackQuery):
+async def bt_view_period(call: CallbackQuery, state: FSMContext):
     period_id = int(call.data.split("_")[2])
+    await state.update_data(period_id=period_id, trade_page=1)
+    await show_period_trades(call, state)
+
+async def show_period_trades(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    period_id = data.get('period_id')
+    page = data.get('trade_page', 1)
+    
     period = get_backtest_period_by_id(period_id, call.from_user.id)
     if not period:
         await call.answer("❌ Период не найден", show_alert=True)
         return
     
-    text = f"📊 Период: {period[2]}\n\n🪙 Актив: {period[3]}\n📅 Период: {period[5]} — {period[6]}\n💰 Начальный баланс: ${period[4]:.2f}\n"
-    
     trades = get_backtest_trades(period_id)
-    if trades:
+    total = len(trades)
+    total_pages = (total + 4) // 5 if total > 0 else 1
+    
+    start = (page - 1) * 5
+    end = start + 5
+    page_trades = trades[start:end]
+    
+    text = f"📊 Период: {period[2]}\n"
+    text += f"🪙 {period[3]} | 💰 ${period[4]:.2f}\n"
+    text += f"📅 {period[5]} — {period[6]}\n\n"
+    
+    if total > 0:
         total_pnl = sum(t[6] for t in trades)
         final_balance = period[4] + total_pnl
-        text += f"\n📈 Итог:\n💰 Текущий баланс: ${final_balance:.2f}\n📊 Общий P&L: ${total_pnl:+.2f}\n"
-        text += f"\n🕒 Последние сделки:\n"
-        for trade in trades[-5:]:
-            result_emoji = "✅" if trade[6] > 0 else ("❌" if trade[6] < 0 else "⚖️")
-            text += f"{result_emoji} {trade[1]} | {trade[2]} | ${trade[6]:.0f}\n"
-    else:
-        text += "\n📭 Нет сделок в этом периоде."
+        text += f"📈 Итог: ${final_balance:.2f} | P&L: ${total_pnl:+.2f}\n\n"
     
+    text += f"📋 Сделки (стр. {page}/{total_pages}):\n\n"
+    
+    if page_trades:
+        for t in page_trades:
+            emoji = "✅" if t[6] > 0 else ("❌" if t[6] < 0 else "⚖️")
+            text += f"{emoji} {t[1]} | {t[2]} | ${t[6]:.2f}\n"
+    else:
+        text += "📭 Нет сделок в этом периоде.\n"
+    
+    # Кнопки пагинации
+    buttons = []
+    nav = []
+    if page > 1:
+        nav.append(InlineKeyboardButton(text="⬅️ Назад", callback_data=f"bt_page_{page-1}"))
+    if page < total_pages:
+        nav.append(InlineKeyboardButton(text="➡️ Вперед", callback_data=f"bt_page_{page+1}"))
+    if nav:
+        buttons.append(nav)
+    
+    buttons.append([InlineKeyboardButton(text="➕ Добавить сделку", callback_data=f"bt_add_trade_{period_id}")])
+    buttons.append([InlineKeyboardButton(text="📊 Статистика периода", callback_data=f"bt_stats_{period_id}")])
+    buttons.append([InlineKeyboardButton(text="📈 График", callback_data=f"bt_chart_{period_id}")])
+    buttons.append([InlineKeyboardButton(text="📎 Excel периода", callback_data=f"bt_excel_{period_id}")])
+    buttons.append([InlineKeyboardButton(text="🗑 Очистить период", callback_data=f"bt_clear_period_{period_id}")])
+    buttons.append([InlineKeyboardButton(text="🔙 К списку периодов", callback_data="backtest_list_periods")])
+    
+    await call.message.edit_text(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    await call.answer()
+
+@dp.callback_query(F.data.startswith("bt_page_"))
+async def bt_change_page(call: CallbackQuery, state: FSMContext):
+    page = int(call.data.split("_")[2])
+    await state.update_data(trade_page=page)
+    await show_period_trades(call, state)
+
+# ========== СТАТИСТИКА ПЕРИОДА ==========
+@dp.callback_query(F.data.startswith("bt_stats_"))
+async def bt_show_period_stats(call: CallbackQuery, state: FSMContext):
+    period_id = int(call.data.split("_")[2])
+    period = get_backtest_period_by_id(period_id, call.from_user.id)
+    if not period:
+        await call.answer("❌ Период не найден", show_alert=True)
+        return
+    trades = get_backtest_trades(period_id)
+    text = get_backtest_stats_text(trades, period[4], period[2])
     await call.message.edit_text(text, reply_markup=backtest_period_menu_kb(period_id))
     await call.answer()
 
-# ---------- ДОБАВЛЕНИЕ ПЕРИОДА (С ДАТАМИ) ----------
+# ========== EXCEL ПЕРИОДА ==========
+@dp.callback_query(F.data.startswith("bt_excel_"))
+async def bt_export_period_excel(call: CallbackQuery):
+    period_id = int(call.data.split("_")[2])
+    period = get_backtest_period_by_id(period_id, call.from_user.id)
+    if not period:
+        await call.answer("❌ Период не найден", show_alert=True)
+        return
+    trades = get_backtest_trades(period_id)
+    if not trades:
+        await call.answer("📭 Нет сделок для экспорта", show_alert=True)
+        return
+    
+    data = []
+    for t in trades:
+        data.append({
+            'trade_date': t[1],
+            'direction': t[2],
+            'entry_price': t[3],
+            'exit_price': t[4],
+            'volume': t[5],
+            'pnl': t[6],
+            'result': t[7],
+            'comment': t[8]
+        })
+    df = pd.DataFrame(data)
+    df['direction'] = df['direction'].replace({'LONG': '🟢 LONG', 'SHORT': '🔴 SHORT'})
+    df['result'] = df['result'].replace({'TAKE': '✅ Тейк', 'STOP': '❌ Стоп', 'BU': '⚖️ БУ'})
+    
+    fname = f"backtest_period_{period_id}.xlsx"
+    with pd.ExcelWriter(fname, engine='openpyxl') as w:
+        df.to_excel(w, sheet_name='Сделки', index=False)
+        ws = w.sheets['Сделки']
+        header_font = Font(bold=True, color="FFFFFF", size=11)
+        header_fill = PatternFill(start_color="2b6cb0", end_color="2b6cb0", fill_type="solid")
+        for col in range(1, len(df.columns)+1):
+            ws.cell(row=1, column=col).font = header_font
+            ws.cell(row=1, column=col).fill = header_fill
+        for col in df.columns:
+            max_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
+            ws.column_dimensions[get_column_letter(df.columns.get_loc(col)+1)].width = min(max_len, 30)
+    
+    await call.message.answer_document(document=FSInputFile(fname), caption=f"📊 Отчёт: {period[2]}")
+    os.remove(fname)
+    await call.answer()
+
+# ---------- ДОБАВЛЕНИЕ ПЕРИОДА ----------
 @dp.callback_query(F.data == "backtest_add_period")
 async def bt_add_period(call: CallbackQuery, state: FSMContext):
     await state.clear()
@@ -1768,32 +1898,6 @@ async def bt_clear_period_execute(call: CallbackQuery, state: FSMContext):
         delete_backtest_period(period_id, call.from_user.id)
     await state.clear()
     await call.message.edit_text("🗑 Период удалён!", reply_markup=backtest_menu())
-    await call.answer()
-
-# ==================================================
-# БЛОК 13: ОБРАБОТЧИКИ EXCEL И ОЧИСТКИ
-# ==================================================
-@dp.callback_query(F.data == "real_excel")
-async def real_excel(call: CallbackQuery):
-    df = get_trades_filtered(call.from_user.id)
-    if df.empty:
-        await call.answer("📭 Нет данных", show_alert=True)
-        return
-    fname = export_real_to_excel(df, call.from_user.id)
-    if fname:
-        await call.message.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт (реальная торговля)")
-        os.remove(fname)
-    await call.answer()
-
-@dp.callback_query(F.data == "real_clear")
-async def real_clear_confirm(call: CallbackQuery):
-    await call.message.edit_text("⚠️ Удалить ВСЕ сделки реальной торговли?", reply_markup=confirm_kb())
-    await call.answer()
-
-@dp.callback_query(F.data == "clear_yes")
-async def clear_yes(call: CallbackQuery):
-    clear_trades(call.from_user.id)
-    await call.message.edit_text("🗑 Журнал реальной торговли очищен!", reply_markup=real_menu())
     await call.answer()
 
 # ==================================================
