@@ -456,7 +456,7 @@ def backtest_periods_kb(periods):
         period_id = p[0]
         period_start = p[2]
         period_end = p[3]
-        buttons.append([InlineKeyboardButton(text=f"📅 {period_start} — {period_end}", callback_data=f"backtest_period_{period_id}")])
+        buttons.append([InlineKeyboardButton(text=f"📅 {period_start} — {period_end}", callback_data=f"btperiod_view_{period_id}")])
     buttons.append([InlineKeyboardButton(text="➕ Новый период", callback_data="backtest_add_period")])
     buttons.append([InlineKeyboardButton(text="🗑 Очистить всё", callback_data="backtest_clear_all")])
     buttons.append([InlineKeyboardButton(text="🔙 Назад", callback_data="back")])
@@ -464,11 +464,11 @@ def backtest_periods_kb(periods):
 
 def backtest_period_menu_kb(period_id):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="➕ Добавить сделку", callback_data=f"backtest_add_trade_{period_id}")],
-        [InlineKeyboardButton(text="📊 Статистика периода", callback_data=f"backtest_period_stats_{period_id}")],
-        [InlineKeyboardButton(text="📈 График", callback_data=f"backtest_period_chart_{period_id}")],
-        [InlineKeyboardButton(text="📎 Excel периода", callback_data=f"backtest_period_excel_{period_id}")],
-        [InlineKeyboardButton(text="🗑 Удалить период", callback_data=f"backtest_delete_period_{period_id}")],
+        [InlineKeyboardButton(text="➕ Добавить сделку", callback_data=f"bt_add_trade_{period_id}")],
+        [InlineKeyboardButton(text="📊 Статистика периода", callback_data=f"bt_stats_{period_id}")],
+        [InlineKeyboardButton(text="📈 График", callback_data=f"bt_chart_{period_id}")],
+        [InlineKeyboardButton(text="📎 Excel периода", callback_data=f"bt_excel_{period_id}")],
+        [InlineKeyboardButton(text="🗑 Удалить период", callback_data=f"bt_delete_period_{period_id}")],
         [InlineKeyboardButton(text="🔙 К списку", callback_data="backtest_list_periods")]
     ])
 
@@ -501,16 +501,16 @@ def real_emotion_kb():
 # ---------- КЛАВИАТУРЫ БЭКТЕСТА ----------
 def backtest_direction_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🟢 LONG", callback_data="backtest_dir_LONG"),
-         InlineKeyboardButton(text="🔴 SHORT", callback_data="backtest_dir_SHORT")],
+        [InlineKeyboardButton(text="🟢 LONG", callback_data="bt_dir_LONG"),
+         InlineKeyboardButton(text="🔴 SHORT", callback_data="bt_dir_SHORT")],
         [InlineKeyboardButton(text="🔙 Назад", callback_data="back")]
     ])
 
 def backtest_result_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✅ Тейк", callback_data="backtest_res_TAKE"),
-         InlineKeyboardButton(text="❌ Стоп", callback_data="backtest_res_STOP"),
-         InlineKeyboardButton(text="⚖️ БУ", callback_data="backtest_res_BU")],
+        [InlineKeyboardButton(text="✅ Тейк", callback_data="bt_res_TAKE"),
+         InlineKeyboardButton(text="❌ Стоп", callback_data="bt_res_STOP"),
+         InlineKeyboardButton(text="⚖️ БУ", callback_data="bt_res_BU")],
         [InlineKeyboardButton(text="🔙 Назад", callback_data="back")]
     ])
 
@@ -1155,6 +1155,14 @@ class BacktestTradeForm(StatesGroup):
     comment = State()
     link_chart = State()
 
+# ---------- ГЛАВНОЕ МЕНЮ БЭКТЕСТА ----------
+@dp.callback_query(F.data == "mode_backtest")
+async def mode_backtest(call: CallbackQuery, state: FSMContext):
+    await state.clear()
+    lang = get_user_lang(call.from_user.id)
+    await call.message.edit_text("🔄 **Бэктест**\n\nВыберите действие:", parse_mode="Markdown", reply_markup=backtest_menu())
+    await call.answer()
+
 # ---------- СПИСОК ПЕРИОДОВ ----------
 @dp.callback_query(F.data == "backtest_list_periods")
 async def bt_list_periods(call: CallbackQuery):
@@ -1210,7 +1218,7 @@ async def bt_initial_balance(msg: Message, state: FSMContext):
         await msg.answer("❌ Ошибка! Введите число.", reply_markup=back_kb())
 
 # ---------- ПРОСМОТР ПЕРИОДА ----------
-@dp.callback_query(F.data.startswith("backtest_period_"))
+@dp.callback_query(F.data.startswith("btperiod_view_"))
 async def bt_view_period(call: CallbackQuery):
     period_id = int(call.data.split("_")[2])
     period = get_backtest_period_by_id(period_id, call.from_user.id)
@@ -1237,7 +1245,7 @@ async def bt_view_period(call: CallbackQuery):
     await call.answer()
 
 # ---------- ДОБАВЛЕНИЕ СДЕЛКИ В ПЕРИОД ----------
-@dp.callback_query(F.data.startswith("backtest_add_trade_"))
+@dp.callback_query(F.data.startswith("bt_add_trade_"))
 async def bt_add_trade(call: CallbackQuery, state: FSMContext):
     period_id = int(call.data.split("_")[3])
     await state.clear()
@@ -1252,14 +1260,14 @@ async def bt_trade_asset(msg: Message, state: FSMContext):
     await state.set_state(BacktestTradeForm.direction)
     await msg.answer("📈 Выберите направление:", reply_markup=backtest_direction_kb())
 
-@dp.callback_query(F.data == "backtest_dir_LONG")
+@dp.callback_query(F.data == "bt_dir_LONG")
 async def bt_trade_direction_long(call: CallbackQuery, state: FSMContext):
     await state.update_data(direction="LONG")
     await state.set_state(BacktestTradeForm.entry_price)
     await call.message.edit_text("💰 Введите цену входа:", reply_markup=back_kb())
     await call.answer()
 
-@dp.callback_query(F.data == "backtest_dir_SHORT")
+@dp.callback_query(F.data == "bt_dir_SHORT")
 async def bt_trade_direction_short(call: CallbackQuery, state: FSMContext):
     await state.update_data(direction="SHORT")
     await state.set_state(BacktestTradeForm.entry_price)
@@ -1299,7 +1307,7 @@ async def bt_trade_volume(msg: Message, state: FSMContext):
     except:
         await msg.answer("❌ Ошибка! Введите число.", reply_markup=back_kb())
 
-@dp.callback_query(F.data.startswith("backtest_res_"))
+@dp.callback_query(F.data.startswith("bt_res_"))
 async def bt_trade_result(call: CallbackQuery, state: FSMContext):
     result = call.data.split("_")[2]
     await state.update_data(result=result)
@@ -1357,9 +1365,9 @@ async def bt_trade_link(msg: Message, state: FSMContext):
     await msg.answer("✅ Сделка добавлена в бэктест!", reply_markup=backtest_menu())
 
 # ---------- СТАТИСТИКА ПЕРИОДА ----------
-@dp.callback_query(F.data.startswith("backtest_period_stats_"))
+@dp.callback_query(F.data.startswith("bt_stats_"))
 async def bt_show_stats(call: CallbackQuery):
-    period_id = int(call.data.split("_")[3])
+    period_id = int(call.data.split("_")[2])
     period = get_backtest_period_by_id(period_id, call.from_user.id)
     if not period:
         await call.answer("Период не найден", show_alert=True)
@@ -1370,9 +1378,9 @@ async def bt_show_stats(call: CallbackQuery):
     await call.answer()
 
 # ---------- ГРАФИК ПЕРИОДА ----------
-@dp.callback_query(F.data.startswith("backtest_period_chart_"))
+@dp.callback_query(F.data.startswith("bt_chart_"))
 async def bt_show_chart(call: CallbackQuery):
-    period_id = int(call.data.split("_")[3])
+    period_id = int(call.data.split("_")[2])
     period = get_backtest_period_by_id(period_id, call.from_user.id)
     if not period:
         await call.answer("Период не найден", show_alert=True)
@@ -1389,9 +1397,9 @@ async def bt_show_chart(call: CallbackQuery):
     await call.answer()
 
 # ---------- EXCEL ПЕРИОДА ----------
-@dp.callback_query(F.data.startswith("backtest_period_excel_"))
+@dp.callback_query(F.data.startswith("bt_excel_"))
 async def bt_export_excel(call: CallbackQuery):
-    period_id = int(call.data.split("_")[3])
+    period_id = int(call.data.split("_")[2])
     period = get_backtest_period_by_id(period_id, call.from_user.id)
     if not period:
         await call.answer("Период не найден", show_alert=True)
@@ -1447,17 +1455,17 @@ async def bt_export_excel(call: CallbackQuery):
     await call.answer()
 
 # ---------- УДАЛЕНИЕ ПЕРИОДА ----------
-@dp.callback_query(F.data.startswith("backtest_delete_period_"))
+@dp.callback_query(F.data.startswith("bt_delete_period_"))
 async def bt_delete_period_confirm(call: CallbackQuery, state: FSMContext):
     period_id = int(call.data.split("_")[3])
     await state.update_data(delete_period_id=period_id)
     await call.message.edit_text(f"⚠️ Удалить период #{period_id} и все его сделки?", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✅ Да", callback_data="backtest_delete_period_yes"),
+        [InlineKeyboardButton(text="✅ Да", callback_data="bt_delete_period_yes"),
          InlineKeyboardButton(text="❌ Нет", callback_data="backtest_list_periods")]
     ]))
     await call.answer()
 
-@dp.callback_query(F.data == "backtest_delete_period_yes")
+@dp.callback_query(F.data == "bt_delete_period_yes")
 async def bt_delete_period_execute(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     period_id = data.get('delete_period_id')
