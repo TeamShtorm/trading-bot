@@ -797,18 +797,45 @@ class BacktestTradeForm(StatesGroup):
 # ==================================================
 # БЛОК 8: ВЕБ-СЕРВЕР ДЛЯ RENDER
 # ==================================================
+WEBHOOK_PATH = "/webhook"
+WEBHOOK_URL = None
+
 async def health_check(request):
     return web.Response(text="Bot is alive!")
+
+async def webhook_handler(request):
+    try:
+        update = await request.json()
+        await dp.feed_update(bot, update)
+        return web.Response(text="OK")
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return web.Response(text="Error", status=500)
+
+async def on_startup():
+    webhook_url = os.environ.get("RENDER_EXTERNAL_URL")
+    if webhook_url:
+        full_url = f"{webhook_url}{WEBHOOK_PATH}"
+        await bot.set_webhook(full_url)
+        print(f"✅ Webhook set to {full_url}")
+
+async def on_shutdown():
+    await bot.delete_webhook()
+    print("Webhook removed")
 
 async def run_web_server():
     app = web.Application()
     app.router.add_get('/', health_check)
     app.router.add_get('/health', health_check)
+    app.router.add_post(WEBHOOK_PATH, webhook_handler)
+    
     runner = web.AppRunner(app)
     await runner.setup()
     port = int(os.environ.get("PORT", 10000))
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
+    
+    await on_startup()
     print(f"🌐 Веб-сервер запущен на порту {port}")
     await asyncio.Event().wait()
 
@@ -1967,10 +1994,7 @@ async def main():
     init_dbs()
     await set_commands()
     print("✅ Бот успешно запущен!")
-    await asyncio.gather(
-        run_web_server(),
-        dp.start_polling(bot)
-    )
+    await run_web_server()
 
 if __name__ == "__main__":
     asyncio.run(main())
