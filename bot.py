@@ -626,7 +626,7 @@ def backtest_timeframe_kb():
 def settings_menu_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🌐 Сменить язык", callback_data="change_lang")],
-        [InlineKeyboardButton(text="📞 Поддержка", callback_data="support")],
+        [InlineKeyboardButton(text="📞 Поддержка", url="https://t.me/TJsupport_bot")],
         [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_mode_selection")]
     ])
 
