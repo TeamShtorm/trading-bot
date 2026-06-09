@@ -1075,54 +1075,78 @@ async def bt_exit(msg: Message, state: FSMContext):
 async def bt_link(msg: Message, state: FSMContext):
     link = msg.text if msg.text != "0" else "-"
     data = await state.get_data()
-    save_backtest(
-        user_id=msg.from_user.id,
-        period_start=data['period_start'],
-        period_end=data['period_end'],
-        timeframe=data['timeframe'],
-        asset=data['asset'],
-        direction=data['direction'],
-        entry_price=data['entry_price'],
-        exit_price=data['exit_price'],
-        link_chart=link
-    )
+    
+    # Сохраняем в отдельную таблицу backtests
+    conn = sqlite3.connect(BT_DB_NAME)
+    conn.execute("""
+        INSERT INTO backtests (user_id, period_start, period_end, timeframe, asset, direction, entry_price, exit_price, link_chart)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (msg.from_user.id, data['period_start'], data['period_end'], data['timeframe'],
+          data['asset'], data['direction'], data['entry_price'], data['exit_price'], link))
+    conn.commit()
+    conn.close()
+    
     await state.clear()
     await msg.answer("✅ Бэктест сохранён!", reply_markup=backtest_menu())
 
 @dp.callback_query(F.data == "list_backtests")
 async def list_backtests(call: CallbackQuery):
-    df = get_backtests(call.from_user.id)
-    if df.empty:
+    conn = sqlite3.connect(BT_DB_NAME)
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM backtests WHERE user_id = ? ORDER BY period_start DESC", (call.from_user.id,))
+    rows = cur.fetchall()
+    conn.close()
+    
+    if not rows:
         await call.answer("📭 Нет данных", show_alert=True)
         return
-    await call.message.edit_text("📋 **Список бэктестов:**", parse_mode="Markdown", reply_markup=list_backtests_kb(df))
-    await call.answer()
-
-@dp.callback_query(F.data.startswith("btview_"))
-async def view_backtest(call: CallbackQuery):
-    bt_id = int(call.data.split("_")[1])
-    bt = get_backtest_by_id(bt_id, call.from_user.id)
-    if not bt:
-        await call.answer("Бэктест не найден", show_alert=True)
-        return
-    text = (
-        f"📋 **Бэктест #{bt['id']}**\n\n"
-        f"🪙 Актив: {bt['asset']}\n"
-        f"📈 Направление: {'🟢 LONG' if bt['direction'] == 'LONG' else '🔴 SHORT'}\n"
-        f"💰 Вход: ${bt['entry_price']}\n"
-        f"💰 Выход: ${bt['exit_price']}\n"
-        f"📅 Период: {bt['period_start']} — {bt['period_end']}\n"
-        f"⏱ Таймфрейм: {bt['timeframe']}\n"
-        f"🔗 Ссылка: {bt['link_chart']}"
-    )
+    
+    text = "📋 **Список бэктестов:**\n\n"
+    for row in rows:
+        text += f"#{row[0]} | {row[5]} | {row[6]} | {row[1]} — {row[2]}\n"
+    
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=backtest_menu())
     await call.answer()
 
 @dp.callback_query(F.data == "backtest_stats_show")
 async def backtest_stats_show(call: CallbackQuery):
-    df = get_backtests(call.from_user.id)
-    text = get_backtest_stats_text(df)
+    conn = sqlite3.connect(BT_DB_NAME)
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM backtests WHERE user_id = ?", (call.from_user.id,))
+    count = cur.fetchone()[0]
+    conn.close()
+    
+    text = f"📊 **Статистика бэктестов**\n\n📋 Всего бэктестов: {count}"
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=backtest_menu())
+    await call.answer()
+
+@dp.callback_query(F.data == "backtest_excel")
+async def backtest_excel(call: CallbackQuery):
+    conn = sqlite3.connect(BT_DB_NAME)
+    df = pd.read_sql_query("SELECT * FROM backtests WHERE user_id = ?", conn, params=(call.from_user.id,))
+    conn.close()
+    
+    if df.empty:
+        await call.answer("📭 Нет данных", show_alert=True)
+        return
+    
+    fname = export_backtest_to_excel(df, call.from_user.id)
+    await call.message.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт (бэктест)")
+    os.remove(fname)
+    await call.answer()
+
+@dp.callback_query(F.data == "backtest_clear")
+async def backtest_clear_confirm(call: CallbackQuery):
+    await call.message.edit_text("⚠️ Удалить ВСЕ бэктесты?", reply_markup=confirm_kb())
+    await call.answer()
+
+@dp.callback_query(F.data == "clear_yes")
+async def clear_backtest_yes(call: CallbackQuery):
+    conn = sqlite3.connect(BT_DB_NAME)
+    conn.execute("DELETE FROM backtests WHERE user_id = ?", (call.from_user.id,))
+    conn.commit()
+    conn.close()
+    await call.message.edit_text("🗑 Бэктесты очищены!", reply_markup=backtest_menu())
     await call.answer()
 
 # ==================================================
