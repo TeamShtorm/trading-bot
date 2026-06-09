@@ -849,34 +849,34 @@ async def cancel_real_trade(call: CallbackQuery, state: FSMContext):
 # ==================================================
 
 @dp.callback_query(F.data == "real_add_trade")
-async def add_trade(call: CallbackQuery, state: FSMContext):
+async def real_add_trade(call: CallbackQuery, state: FSMContext):
     await state.clear()
     await state.set_state(TradeForm.asset)
     await call.message.edit_text("Введите тикер (BTC, ETH, TON, AAPL):", reply_markup=cancel_real_kb())
     await call.answer()
 
 @dp.message(TradeForm.asset)
-async def get_asset(msg: Message, state: FSMContext):
+async def real_asset(msg: Message, state: FSMContext):
     await state.update_data(asset=msg.text.upper())
     await state.set_state(TradeForm.direction)
     await msg.answer("Выберите направление:", reply_markup=real_direction_kb())
 
 @dp.callback_query(F.data == "real_dir_LONG")
-async def get_direction_long(call: CallbackQuery, state: FSMContext):
+async def real_direction_long(call: CallbackQuery, state: FSMContext):
     await state.update_data(direction="LONG")
     await state.set_state(TradeForm.entry_price)
     await call.message.edit_text("Введите цену входа:", reply_markup=cancel_real_kb())
     await call.answer()
 
 @dp.callback_query(F.data == "real_dir_SHORT")
-async def get_direction_short(call: CallbackQuery, state: FSMContext):
+async def real_direction_short(call: CallbackQuery, state: FSMContext):
     await state.update_data(direction="SHORT")
     await state.set_state(TradeForm.entry_price)
     await call.message.edit_text("Введите цену входа:", reply_markup=cancel_real_kb())
     await call.answer()
 
 @dp.message(TradeForm.entry_price)
-async def get_entry(msg: Message, state: FSMContext):
+async def real_entry(msg: Message, state: FSMContext):
     try:
         val = float(msg.text.replace(",", "."))
         await state.update_data(entry_price=val)
@@ -886,7 +886,7 @@ async def get_entry(msg: Message, state: FSMContext):
         await msg.answer("Ошибка! Введите число.", reply_markup=cancel_real_kb())
 
 @dp.message(TradeForm.exit_price)
-async def get_exit(msg: Message, state: FSMContext):
+async def real_exit(msg: Message, state: FSMContext):
     try:
         val = float(msg.text.replace(",", "."))
         await state.update_data(exit_price=val)
@@ -896,64 +896,74 @@ async def get_exit(msg: Message, state: FSMContext):
         await msg.answer("Ошибка! Введите число.", reply_markup=cancel_real_kb())
 
 @dp.message(TradeForm.volume)
-async def get_volume(msg: Message, state: FSMContext):
+async def real_volume(msg: Message, state: FSMContext):
     try:
-        val = float(msg.text.replace(",", "."))
-        await state.update_data(volume=val)
+        vol = float(msg.text.replace(",", "."))
+        data = await state.get_data()
+        direction = data['direction']
+        entry = data['entry_price']
+        exit_p = data['exit_price']
+        # ПРАВИЛЬНЫЙ РАСЧЁТ P&L
+        if direction == "LONG":
+            pnl = (exit_p - entry) * vol
+        else:
+            pnl = (entry - exit_p) * vol
+        await state.update_data(volume=vol, pnl=pnl)
         await state.set_state(TradeForm.result)
         await msg.answer("Как закрылась сделка?", reply_markup=real_result_kb())
     except ValueError:
         await msg.answer("Ошибка! Введите число.", reply_markup=cancel_real_kb())
 
 @dp.callback_query(F.data == "real_res_TAKE")
-async def get_result_take(call: CallbackQuery, state: FSMContext):
+async def real_result_take(call: CallbackQuery, state: FSMContext):
     await state.update_data(result="TAKE")
     await state.set_state(TradeForm.comment)
     await call.message.edit_text("Введите комментарий (отправьте '-' чтобы пропустить):", reply_markup=cancel_real_kb())
     await call.answer()
 
 @dp.callback_query(F.data == "real_res_STOP")
-async def get_result_stop(call: CallbackQuery, state: FSMContext):
+async def real_result_stop(call: CallbackQuery, state: FSMContext):
     await state.update_data(result="STOP")
     await state.set_state(TradeForm.comment)
     await call.message.edit_text("Введите комментарий (отправьте '-' чтобы пропустить):", reply_markup=cancel_real_kb())
     await call.answer()
 
 @dp.callback_query(F.data == "real_res_BU")
-async def get_result_bu(call: CallbackQuery, state: FSMContext):
+async def real_result_bu(call: CallbackQuery, state: FSMContext):
     await state.update_data(result="BU")
+    await state.update_data(pnl=0)
     await state.set_state(TradeForm.comment)
     await call.message.edit_text("Введите комментарий (отправьте '-' чтобы пропустить):", reply_markup=cancel_real_kb())
     await call.answer()
 
 @dp.message(TradeForm.comment)
-async def get_comment(msg: Message, state: FSMContext):
+async def real_comment(msg: Message, state: FSMContext):
     com = msg.text.strip()
     await state.update_data(comment="" if com == "-" else com)
     await state.set_state(TradeForm.add_link)
     await msg.answer("Хотите добавить ссылку на график?", reply_markup=real_link_kb())
 
 @dp.callback_query(F.data == "real_add_link")
-async def add_link_yes(call: CallbackQuery, state: FSMContext):
+async def real_add_link_yes(call: CallbackQuery, state: FSMContext):
     await state.set_state(TradeForm.link_url)
     await call.message.edit_text("Отправьте ссылку:", reply_markup=cancel_real_kb())
     await call.answer()
 
 @dp.callback_query(F.data == "real_link_done")
-async def add_link_no(call: CallbackQuery, state: FSMContext):
+async def real_link_done(call: CallbackQuery, state: FSMContext):
     await state.update_data(links="")
     await state.set_state(TradeForm.trade_date)
     await call.message.edit_text("Введите дату (ДД.ММ.ГГГГ) или 'сегодня':", reply_markup=cancel_real_kb())
     await call.answer()
 
 @dp.message(TradeForm.link_url)
-async def get_link(msg: Message, state: FSMContext):
+async def real_get_link(msg: Message, state: FSMContext):
     await state.update_data(link_url=msg.text)
     await state.set_state(TradeForm.link_tf)
     await msg.answer("Какой это таймфрейм? (15м, 1ч, 4ч, 1д, 1н, 1м):", reply_markup=cancel_real_kb())
 
 @dp.message(TradeForm.link_tf)
-async def get_tf(msg: Message, state: FSMContext):
+async def real_get_tf(msg: Message, state: FSMContext):
     tf = msg.text
     data = await state.get_data()
     links = data.get("links", "")
@@ -964,7 +974,7 @@ async def get_tf(msg: Message, state: FSMContext):
     await msg.answer("Ссылка сохранена! Хотите добавить ещё?", reply_markup=real_link_kb())
 
 @dp.message(TradeForm.trade_date)
-async def get_date(msg: Message, state: FSMContext):
+async def real_date(msg: Message, state: FSMContext):
     dstr = msg.text.strip().lower()
     if dstr in ["сегодня", "today"]:
         trade_date = datetime.now().strftime("%Y-%m-%d")
@@ -979,38 +989,42 @@ async def get_date(msg: Message, state: FSMContext):
     await msg.answer("Какие эмоции были?", reply_markup=real_emotion_kb())
 
 @dp.callback_query(F.data == "real_em_calm")
-async def get_emotion_calm(call: CallbackQuery, state: FSMContext):
-    await finish_trade(call, state, "Спокойствие")
+async def real_emotion_calm(call: CallbackQuery, state: FSMContext):
+    await finish_real_trade(call, state, "Спокойствие")
 
 @dp.callback_query(F.data == "real_em_fear")
-async def get_emotion_fear(call: CallbackQuery, state: FSMContext):
-    await finish_trade(call, state, "Страх")
+async def real_emotion_fear(call: CallbackQuery, state: FSMContext):
+    await finish_real_trade(call, state, "Страх")
 
 @dp.callback_query(F.data == "real_em_greed")
-async def get_emotion_greed(call: CallbackQuery, state: FSMContext):
-    await finish_trade(call, state, "Жадность")
+async def real_emotion_greed(call: CallbackQuery, state: FSMContext):
+    await finish_real_trade(call, state, "Жадность")
 
 @dp.callback_query(F.data == "real_em_tilt")
-async def get_emotion_tilt(call: CallbackQuery, state: FSMContext):
-    await finish_trade(call, state, "Тильт")
+async def real_emotion_tilt(call: CallbackQuery, state: FSMContext):
+    await finish_real_trade(call, state, "Тильт")
 
 @dp.callback_query(F.data == "real_em_confidence")
-async def get_emotion_confidence(call: CallbackQuery, state: FSMContext):
-    await finish_trade(call, state, "Уверенность")
+async def real_emotion_confidence(call: CallbackQuery, state: FSMContext):
+    await finish_real_trade(call, state, "Уверенность")
 
-async def finish_trade(call: CallbackQuery, state: FSMContext, emotion: str):
+async def finish_real_trade(call: CallbackQuery, state: FSMContext, emotion: str):
     data = await state.get_data()
-    direction = data['direction']
-    pnl = (data['exit_price'] - data['entry_price']) * data['volume'] if direction == "LONG" else (data['entry_price'] - data['exit_price']) * data['volume']
-    if data['result'] == "BU":
-        pnl = 0
+    # P&L уже рассчитан в volume, берём его из state
+    pnl = data.get('pnl', 0)
     save_trade(
         user_id=call.from_user.id,
-        asset=data['asset'], direction=direction,
-        entry_price=data['entry_price'], exit_price=data['exit_price'],
-        volume=data['volume'], pnl=pnl, result=data['result'],
-        comment=data['comment'], trade_date=data['trade_date'],
-        links=data.get('links', ''), emotion=emotion
+        asset=data['asset'],
+        direction=data['direction'],
+        entry_price=data['entry_price'],
+        exit_price=data['exit_price'],
+        volume=data['volume'],
+        pnl=pnl,
+        result=data['result'],
+        comment=data['comment'],
+        trade_date=data['trade_date'],
+        links=data.get('links', ''),
+        emotion=emotion
     )
     await state.clear()
     await call.message.edit_text("Сделка сохранена!", reply_markup=real_menu())
@@ -1019,8 +1033,9 @@ async def finish_trade(call: CallbackQuery, state: FSMContext, emotion: str):
 # ==================================================
 # БЛОК 11: ОБРАБОТЧИКИ СПИСКА СДЕЛОК (ФИЛЬТРЫ И ПАГИНАЦИЯ)
 # ==================================================
-@dp.callback_query(F.data == "list_trades")
-async def list_trades(call: CallbackQuery, state: FSMContext):
+
+@dp.callback_query(F.data == "real_list_trades")
+async def real_list_trades(call: CallbackQuery, state: FSMContext):
     await state.update_data(page=1, result_filter="all", asset_filter=None, date_filter=None)
     await show_trades_page(call, state)
 
@@ -1033,7 +1048,7 @@ async def show_trades_page(call: CallbackQuery, state: FSMContext):
     
     df = get_trades_filtered(call.from_user.id, result_filter, asset_filter, date_filter)
     if df.empty:
-        await call.answer("📭 Нет данных", show_alert=True)
+        await call.answer("Нет данных", show_alert=True)
         return
     
     total = len(df)
@@ -1054,29 +1069,29 @@ async def show_trades_page(call: CallbackQuery, state: FSMContext):
     if date_filter:
         filter_text += f" | {date_filter}"
     
-    text = f"📋 **Сделки** (страница {page}/{total_pages}){filter_text}"
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=trades_list_kb(trades_df, page, total_pages))
+    text = f"Сделки (страница {page}/{total_pages}){filter_text}"
+    await call.message.edit_text(text, reply_markup=real_trades_list_kb(trades_df, page, total_pages))
     await call.answer()
 
-@dp.callback_query(F.data.startswith("page_"))
-async def change_page(call: CallbackQuery, state: FSMContext):
-    page = int(call.data.split("_")[1])
+@dp.callback_query(F.data.startswith("real_page_"))
+async def real_change_page(call: CallbackQuery, state: FSMContext):
+    page = int(call.data.split("_")[2])
     await state.update_data(page=page)
     await show_trades_page(call, state)
 
-@dp.callback_query(F.data == "filter_menu")
-async def filter_menu(call: CallbackQuery, state: FSMContext):
+@dp.callback_query(F.data == "real_filter_menu")
+async def real_filter_menu(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     result_filter = data.get('result_filter', 'all')
     asset_filter = data.get('asset_filter', None)
     date_filter = data.get('date_filter', None)
     assets = get_all_assets(call.from_user.id)
-    await call.message.edit_text("🔍 **Фильтры:**", parse_mode="Markdown", reply_markup=filter_menu_kb(result_filter, asset_filter, date_filter, len(assets) > 0))
+    await call.message.edit_text("Фильтры:", reply_markup=real_filter_menu_kb(result_filter, asset_filter, date_filter, len(assets) > 0))
     await call.answer()
 
-@dp.callback_query(F.data.startswith("filter_"))
-async def apply_filter(call: CallbackQuery, state: FSMContext):
-    action = call.data.split("_")[1]
+@dp.callback_query(F.data.startswith("real_filter_"))
+async def real_apply_filter(call: CallbackQuery, state: FSMContext):
+    action = call.data.split("_")[2]
     
     if action == "all":
         await state.update_data(result_filter="all", asset_filter=None, date_filter=None, page=1)
@@ -1091,150 +1106,153 @@ async def apply_filter(call: CallbackQuery, state: FSMContext):
         await show_trades_page(call, state)
         return
     elif action == "asset":
-        await call.message.edit_text("💰 **Выберите актив:**", parse_mode="Markdown", reply_markup=filter_asset_kb(get_all_assets(call.from_user.id)))
+        await call.message.edit_text("Выберите актив:", reply_markup=real_filter_asset_kb(get_all_assets(call.from_user.id)))
         return
     elif action == "date":
-        await call.message.edit_text("📅 **Выберите период:**", parse_mode="Markdown", reply_markup=filter_date_kb())
+        await call.message.edit_text("Выберите период:", reply_markup=real_filter_date_kb())
         return
     
     await show_trades_page(call, state)
 
-@dp.callback_query(F.data.startswith("filter_asset_"))
-async def apply_asset_filter(call: CallbackQuery, state: FSMContext):
-    asset = call.data.split("_")[2]
+@dp.callback_query(F.data.startswith("real_filter_asset_"))
+async def real_apply_asset_filter(call: CallbackQuery, state: FSMContext):
+    asset = call.data.split("_")[3]
     await state.update_data(asset_filter=asset, page=1)
     await show_trades_page(call, state)
 
-@dp.callback_query(F.data.startswith("filter_date_"))
-async def apply_date_filter(call: CallbackQuery, state: FSMContext):
-    date_filter = call.data.split("_")[2]
+@dp.callback_query(F.data.startswith("real_filter_date_"))
+async def real_apply_date_filter(call: CallbackQuery, state: FSMContext):
+    date_filter = call.data.split("_")[3]
     await state.update_data(date_filter=date_filter, page=1)
     await show_trades_page(call, state)
 
-@dp.callback_query(F.data.startswith("view_"))
-async def view_trade(call: CallbackQuery):
-    trade_id = int(call.data.split("_")[1])
+# ========== ПРОСМОТР СДЕЛКИ ==========
+@dp.callback_query(F.data.startswith("real_view_"))
+async def real_view_trade(call: CallbackQuery):
+    trade_id = int(call.data.split("_")[2])
     trade = get_trade_by_id(trade_id, call.from_user.id)
     if not trade:
         await call.answer("Сделка не найдена", show_alert=True)
         return
     links = trade.get('links', '') or '-'
     dir_emoji = "🟢" if trade['direction'] == "LONG" else "🔴"
-    result_text = {"TAKE": "✅ Тейк", "STOP": "❌ Стоп", "BU": "⚖️ БУ"}.get(trade['result'], trade['result'])
+    result_text = {"TAKE": "Тейк", "STOP": "Стоп", "BU": "БУ"}.get(trade['result'], trade['result'])
     text = (
-        f"📋 **Сделка #{trade['id']}**\n\n"
-        f"🪙 Актив: {trade['asset']}\n"
-        f"📈 Направление: {dir_emoji} {trade['direction']}\n"
-        f"💰 Вход: ${trade['entry_price']}\n"
-        f"💰 Выход: ${trade['exit_price']}\n"
-        f"📊 Объём: {trade['volume']}\n"
-        f"💵 P&L: ${trade['pnl']}\n"
-        f"🎯 Исход: {result_text}\n"
-        f"📅 Дата: {trade['trade_date']}\n"
-        f"😊 Эмоции: {trade['emotion']}\n"
-        f"🔗 Ссылки:\n{links}\n"
-        f"📝 Комментарий: {trade['comment'] or '-'}"
+        f"Сделка #{trade['id']}\n\n"
+        f"Актив: {trade['asset']}\n"
+        f"Направление: {dir_emoji} {trade['direction']}\n"
+        f"Вход: ${trade['entry_price']}\n"
+        f"Выход: ${trade['exit_price']}\n"
+        f"Объём: {trade['volume']}\n"
+        f"P&L: ${trade['pnl']}\n"
+        f"Исход: {result_text}\n"
+        f"Дата: {trade['trade_date']}\n"
+        f"Эмоции: {trade['emotion']}\n"
+        f"Ссылки:\n{links}\n"
+        f"Комментарий: {trade['comment'] or '-'}"
     )
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=view_trade_kb(trade_id))
+    await call.message.edit_text(text, reply_markup=real_view_trade_kb(trade_id))
     await call.answer()
 
-@dp.callback_query(F.data.startswith("del_"))
-async def delete_confirm(call: CallbackQuery, state: FSMContext):
-    trade_id = int(call.data.split("_")[1])
+# ========== УДАЛЕНИЕ СДЕЛКИ ==========
+@dp.callback_query(F.data.startswith("real_del_"))
+async def real_delete_confirm(call: CallbackQuery, state: FSMContext):
+    trade_id = int(call.data.split("_")[2])
     await state.update_data(delete_id=trade_id)
     await call.message.edit_text(f"⚠️ Удалить сделку #{trade_id}?", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✅ Да", callback_data="del_yes"),
-         InlineKeyboardButton(text="❌ Нет", callback_data="list_trades")]
+        [InlineKeyboardButton(text="Да", callback_data="real_del_yes"),
+         InlineKeyboardButton(text="Нет", callback_data="real_list_trades")]
     ]))
     await call.answer()
 
-@dp.callback_query(F.data == "del_yes")
-async def delete_execute(call: CallbackQuery, state: FSMContext):
+@dp.callback_query(F.data == "real_del_yes")
+async def real_delete_execute(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     trade_id = data.get('delete_id')
     if trade_id:
         delete_trade(trade_id, call.from_user.id)
     await state.clear()
-    await call.message.edit_text("🗑 Сделка удалена!", reply_markup=real_menu())
+    await call.message.edit_text("Сделка удалена!", reply_markup=real_menu())
     await call.answer()
 
 # ==================================================
 # БЛОК 12: ОБРАБОТЧИКИ СТАТИСТИКИ
 # ==================================================
+
 @dp.callback_query(F.data == "real_stats_show")
 async def real_stats_menu(call: CallbackQuery):
-    await call.message.edit_text("📊 **Выберите тип статистики:**", parse_mode="Markdown", reply_markup=stats_main_kb())
+    await call.message.edit_text("Выберите тип статистики:", reply_markup=real_stats_main_kb())
     await call.answer()
 
-@dp.callback_query(F.data == "stats_all")
-async def stats_all(call: CallbackQuery):
+@dp.callback_query(F.data == "real_stats_all")
+async def real_stats_all(call: CallbackQuery):
     df = get_trades_filtered(call.from_user.id)
     text = get_stats_text(df)
     chart = generate_equity_chart(df, call.from_user.id)
     if chart:
-        await call.message.answer_photo(photo=FSInputFile(chart), caption=text, parse_mode="Markdown")
+        await call.message.answer_photo(photo=FSInputFile(chart), caption=text)
         os.remove(chart)
     else:
-        await call.message.answer(text, parse_mode="Markdown")
-    await call.message.answer("📊 **Выберите тип статистики:**", parse_mode="Markdown", reply_markup=stats_main_kb())
+        await call.message.answer(text)
+    await call.message.answer("Выберите тип статистики:", reply_markup=real_stats_main_kb())
     await call.answer()
 
-@dp.callback_query(F.data == "stats_by_asset")
-async def stats_by_asset_menu(call: CallbackQuery):
+@dp.callback_query(F.data == "real_stats_by_asset")
+async def real_stats_by_asset_menu(call: CallbackQuery):
     assets = get_all_assets(call.from_user.id)
     if not assets:
-        await call.answer("📭 Нет активов", show_alert=True)
+        await call.answer("Нет активов", show_alert=True)
         return
-    await call.message.edit_text("💰 **Выберите актив:**", parse_mode="Markdown", reply_markup=stats_assets_kb(assets))
+    await call.message.edit_text("Выберите актив:", reply_markup=real_stats_assets_kb(assets))
     await call.answer()
 
-@dp.callback_query(F.data.startswith("stats_asset_"))
-async def stats_asset_show(call: CallbackQuery):
-    asset = call.data.split("_")[2]
+@dp.callback_query(F.data.startswith("real_stats_asset_"))
+async def real_stats_asset_show(call: CallbackQuery):
+    asset = call.data.split("_")[3]
     df = get_trades_filtered(call.from_user.id, asset_filter=asset)
     text = get_stats_text(df)
     chart = generate_equity_chart(df, call.from_user.id)
     if chart:
-        await call.message.answer_photo(photo=FSInputFile(chart), caption=text, parse_mode="Markdown")
+        await call.message.answer_photo(photo=FSInputFile(chart), caption=text)
         os.remove(chart)
     else:
-        await call.message.answer(text, parse_mode="Markdown")
-    await call.message.answer("💰 **Выберите актив:**", parse_mode="Markdown", reply_markup=stats_assets_kb(get_all_assets(call.from_user.id)))
+        await call.message.answer(text)
+    await call.message.answer("Выберите актив:", reply_markup=real_stats_assets_kb(get_all_assets(call.from_user.id)))
     await call.answer()
 
-@dp.callback_query(F.data == "stats_by_date")
-async def stats_by_date_menu(call: CallbackQuery):
-    await call.message.edit_text("📅 **Выберите период:**", parse_mode="Markdown", reply_markup=stats_date_kb())
+@dp.callback_query(F.data == "real_stats_by_date")
+async def real_stats_by_date_menu(call: CallbackQuery):
+    await call.message.edit_text("Выберите период:", reply_markup=real_stats_date_kb())
     await call.answer()
 
-@dp.callback_query(F.data.startswith("stats_date_"))
-async def stats_date_show(call: CallbackQuery):
-    period = call.data.split("_")[2]
+@dp.callback_query(F.data.startswith("real_stats_date_"))
+async def real_stats_date_show(call: CallbackQuery):
+    period = call.data.split("_")[3]
     df = get_trades_filtered(call.from_user.id, date_filter=period)
     titles = {"day": "За сегодня", "week": "За неделю", "month": "За месяц"}
     text = get_stats_text_short(df, titles.get(period, "Статистика"))
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=stats_date_kb())
+    await call.message.edit_text(text, reply_markup=real_stats_date_kb())
     await call.answer()
 
-@dp.callback_query(F.data == "stats_by_emotion")
-async def stats_by_emotion_menu(call: CallbackQuery):
-    await call.message.edit_text("😊 **Выберите эмоцию:**", parse_mode="Markdown", reply_markup=stats_emotions_kb())
+@dp.callback_query(F.data == "real_stats_by_emotion")
+async def real_stats_by_emotion_menu(call: CallbackQuery):
+    await call.message.edit_text("Выберите эмоцию:", reply_markup=real_stats_emotions_kb())
     await call.answer()
 
-@dp.callback_query(F.data.startswith("stats_em_"))
-async def stats_emotion_show(call: CallbackQuery):
+@dp.callback_query(F.data.startswith("real_stats_em_"))
+async def real_stats_emotion_show(call: CallbackQuery):
     em_map = {
-        "calm": "😊 Спокойствие",
-        "fear": "😨 Страх",
-        "greed": "😈 Жадность",
-        "tilt": "🤬 Тильт",
-        "confidence": "😌 Уверенность"
+        "calm": "Спокойствие",
+        "fear": "Страх",
+        "greed": "Жадность",
+        "tilt": "Тильт",
+        "confidence": "Уверенность"
     }
-    emotion = em_map.get(call.data.split("_")[2], "😊 Спокойствие")
+    emotion = em_map.get(call.data.split("_")[3], "Спокойствие")
     df = get_trades_filtered(call.from_user.id)
     df = df[df['emotion'] == emotion]
     text = get_stats_text(df)
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=stats_emotions_kb())
+    await call.message.edit_text(text, reply_markup=real_stats_emotions_kb())
     await call.answer()
 
 # ==================================================
@@ -1324,7 +1342,6 @@ async def back_to_period_menu(call: CallbackQuery, state: FSMContext):
     else:
         await back_to_backtest_menu(call, state)
 
-# ---------- ОТМЕНА ДОБАВЛЕНИЯ СДЕЛКИ В БЭКТЕСТЕ ----------
 @dp.callback_query(F.data == "cancel_backtest_trade")
 async def cancel_backtest_trade(call: CallbackQuery, state: FSMContext):
     await state.clear()
@@ -1373,6 +1390,32 @@ async def view_periods_page(call: CallbackQuery, state: FSMContext):
     await state.update_data(view_page=page)
     await show_periods_list(call, state, "view")
 
+# ========== ОТДЕЛЬНЫЙ ОБРАБОТЧИК ДЛЯ ПРОСМОТРА ПЕРИОДА ==========
+@dp.callback_query(F.data.startswith("view_period_"))
+async def bt_view_period(call: CallbackQuery):
+    period_id = int(call.data.split("_")[2])
+    period = get_backtest_period_by_id(period_id, call.from_user.id)
+    if not period:
+        await call.answer("Период не найден", show_alert=True)
+        return
+    
+    text = f"Период: {period[2]}\n\nАктив: {period[3]}\nНачальный баланс: ${period[4]:.2f}\n"
+    
+    trades = get_backtest_trades(period_id)
+    if trades:
+        total_pnl = sum(t[6] for t in trades)
+        final_balance = period[4] + total_pnl
+        text += f"\nИтог:\nТекущий баланс: ${final_balance:.2f}\nОбщий P&L: ${total_pnl:+.2f}\n"
+        text += f"\nПоследние сделки:\n"
+        for trade in trades[-5:]:
+            result_emoji = "✅" if trade[6] > 0 else ("❌" if trade[6] < 0 else "⚖️")
+            text += f"{result_emoji} {trade[1]} | {trade[2]} | ${trade[6]:.0f}\n"
+    else:
+        text += "\nНет сделок в этом периоде."
+    
+    await call.message.edit_text(text, reply_markup=backtest_period_menu_kb(period_id))
+    await call.answer()
+
 
 # ---------- ДОБАВЛЕНИЕ ПЕРИОДА ----------
 @dp.callback_query(F.data == "backtest_add_period")
@@ -1409,33 +1452,6 @@ async def bt_initial_balance(msg: Message, state: FSMContext):
         await msg.answer(f"Период '{data['name']}' создан!\n\nАктив: {data['asset']}\nБаланс: ${balance:.2f}\n\nТеперь вы можете добавлять сделки в этот период.", reply_markup=backtest_menu())
     except ValueError:
         await msg.answer("Ошибка! Введите число.", reply_markup=back_kb())
-
-
-# ---------- ПРОСМОТР ПЕРИОДА ----------
-@dp.callback_query(F.data.startswith("view_period_"))
-async def bt_view_period(call: CallbackQuery):
-    period_id = int(call.data.split("_")[2])
-    period = get_backtest_period_by_id(period_id, call.from_user.id)
-    if not period:
-        await call.answer("Период не найден", show_alert=True)
-        return
-    
-    text = f"Период: {period[2]}\n\nАктив: {period[3]}\nНачальный баланс: ${period[4]:.2f}\n"
-    
-    trades = get_backtest_trades(period_id)
-    if trades:
-        total_pnl = sum(t[6] for t in trades)
-        final_balance = period[4] + total_pnl
-        text += f"\nИтог:\nТекущий баланс: ${final_balance:.2f}\nОбщий P&L: ${total_pnl:+.2f}\n"
-        text += f"\nПоследние сделки:\n"
-        for trade in trades[-5:]:
-            result_emoji = "✅" if trade[6] > 0 else ("❌" if trade[6] < 0 else "⚖️")
-            text += f"{result_emoji} {trade[1]} | {trade[2]} | ${trade[6]:.0f}\n"
-    else:
-        text += "\nНет сделок в этом периоде."
-    
-    await call.message.edit_text(text, reply_markup=backtest_period_menu_kb(period_id))
-    await call.answer()
 
 
 # ---------- СТАТИСТИКА СПИСОК ПЕРИОДОВ ----------
@@ -1723,8 +1739,8 @@ async def bt_clear_period_confirm(call: CallbackQuery, state: FSMContext):
     period_id = int(call.data.split("_")[3])
     await state.update_data(delete_period_id=period_id)
     await call.message.edit_text(f"⚠️ Удалить период и все его сделки?", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✅ Да", callback_data="bt_clear_period_yes"),
-         InlineKeyboardButton(text="❌ Нет", callback_data="backtest_list_periods")]
+        [InlineKeyboardButton(text="Да", callback_data="bt_clear_period_yes"),
+         InlineKeyboardButton(text="Нет", callback_data="backtest_list_periods")]
     ]))
     await call.answer()
 
