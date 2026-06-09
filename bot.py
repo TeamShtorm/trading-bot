@@ -139,10 +139,20 @@ def init_backtest_db():
         CREATE TABLE IF NOT EXISTS backtest_periods (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
-            period_start TEXT,
-            period_end TEXT,
+            name TEXT,
+            asset TEXT,
             initial_balance REAL,
             created_at TEXT
+        )
+    """)
+    # Таблица таймфреймов и ссылок для периода
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS backtest_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            period_id INTEGER,
+            timeframe TEXT,
+            link TEXT,
+            FOREIGN KEY (period_id) REFERENCES backtest_periods(id)
         )
     """)
     # Таблица сделок внутри бэктеста
@@ -150,33 +160,48 @@ def init_backtest_db():
         CREATE TABLE IF NOT EXISTS backtest_trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             period_id INTEGER,
-            asset TEXT,
+            trade_date TEXT,
             direction TEXT,
             entry_price REAL,
             exit_price REAL,
             volume REAL,
             pnl REAL,
             result TEXT,
-            trade_date TEXT,
             comment TEXT,
-            link_chart TEXT,
             FOREIGN KEY (period_id) REFERENCES backtest_periods(id)
         )
     """)
     conn.commit()
     conn.close()
 
-def save_backtest_period(user_id, period_start, period_end, initial_balance):
+def save_backtest_period(user_id, name, asset, initial_balance):
     conn = sqlite3.connect(BT_DB_NAME)
     cur = conn.cursor()
     cur.execute("""
-        INSERT INTO backtest_periods (user_id, period_start, period_end, initial_balance, created_at)
+        INSERT INTO backtest_periods (user_id, name, asset, initial_balance, created_at)
         VALUES (?, ?, ?, ?, ?)
-    """, (user_id, period_start, period_end, initial_balance, datetime.now().isoformat()))
+    """, (user_id, name, asset, initial_balance, datetime.now().isoformat()))
     conn.commit()
     period_id = cur.lastrowid
     conn.close()
     return period_id
+
+def save_backtest_link(period_id, timeframe, link):
+    conn = sqlite3.connect(BT_DB_NAME)
+    conn.execute("""
+        INSERT INTO backtest_links (period_id, timeframe, link)
+        VALUES (?, ?, ?)
+    """, (period_id, timeframe, link))
+    conn.commit()
+    conn.close()
+
+def get_backtest_links(period_id):
+    conn = sqlite3.connect(BT_DB_NAME)
+    cur = conn.cursor()
+    cur.execute("SELECT timeframe, link FROM backtest_links WHERE period_id = ?", (period_id,))
+    rows = cur.fetchall()
+    conn.close()
+    return rows
 
 def get_backtest_periods(user_id):
     conn = sqlite3.connect(BT_DB_NAME)
@@ -196,6 +221,7 @@ def get_backtest_period_by_id(period_id, user_id):
 
 def delete_backtest_period(period_id, user_id):
     conn = sqlite3.connect(BT_DB_NAME)
+    conn.execute("DELETE FROM backtest_links WHERE period_id = ?", (period_id,))
     conn.execute("DELETE FROM backtest_trades WHERE period_id = ?", (period_id,))
     conn.execute("DELETE FROM backtest_periods WHERE id = ? AND user_id = ?", (period_id, user_id))
     conn.commit()
@@ -203,17 +229,18 @@ def delete_backtest_period(period_id, user_id):
 
 def clear_backtest_periods(user_id):
     conn = sqlite3.connect(BT_DB_NAME)
+    conn.execute("DELETE FROM backtest_links WHERE period_id IN (SELECT id FROM backtest_periods WHERE user_id = ?)", (user_id,))
     conn.execute("DELETE FROM backtest_trades WHERE period_id IN (SELECT id FROM backtest_periods WHERE user_id = ?)", (user_id,))
     conn.execute("DELETE FROM backtest_periods WHERE user_id = ?", (user_id,))
     conn.commit()
     conn.close()
 
-def save_backtest_trade(period_id, asset, direction, entry_price, exit_price, volume, pnl, result, trade_date, comment, link_chart):
+def save_backtest_trade(period_id, trade_date, direction, entry_price, exit_price, volume, pnl, result, comment):
     conn = sqlite3.connect(BT_DB_NAME)
     conn.execute("""
-        INSERT INTO backtest_trades (period_id, asset, direction, entry_price, exit_price, volume, pnl, result, trade_date, comment, link_chart)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (period_id, asset, direction, entry_price, exit_price, volume, pnl, result, trade_date, comment, link_chart))
+        INSERT INTO backtest_trades (period_id, trade_date, direction, entry_price, exit_price, volume, pnl, result, comment)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (period_id, trade_date, direction, entry_price, exit_price, volume, pnl, result, comment))
     conn.commit()
     conn.close()
 
@@ -256,23 +283,25 @@ def generate_equity_chart(df, user_id):
     plt.close()
     return fname
 
-def generate_backtest_equity_chart(trades, initial_balance, period_id):
+def generate_backtest_equity_chart(trades, initial_balance, period_id, period_name=""):
     if not trades:
         return None
-    equity = [initial_balance]
-    pnl_sum = 0
+    
+    # Строим кривую баланса
+    balance = [initial_balance]
     for trade in trades:
-        pnl_sum += trade[6]  # pnl
-        equity.append(initial_balance + pnl_sum)
+        new_balance = balance[-1] + trade[6]  # trade[6] — это pnl
+        balance.append(new_balance)
     
     plt.figure(figsize=(10, 5))
-    plt.plot(equity, marker='o', color='#2b6cb0', linewidth=2, markersize=4)
-    plt.axhline(initial_balance, color='red', linestyle='--', linewidth=1)
-    plt.fill_between(range(len(equity)), initial_balance, equity, where=(equity >= initial_balance), color='green', alpha=0.3)
-    plt.fill_between(range(len(equity)), initial_balance, equity, where=(equity < initial_balance), color='red', alpha=0.3)
-    plt.title(f"📈 Кривая доходности бэктеста", fontsize=14, fontweight='bold')
+    plt.plot(balance, marker='o', color='#2b6cb0', linewidth=2, markersize=4)
+    plt.axhline(initial_balance, color='red', linestyle='--', linewidth=1, label=f'Начальный баланс: ${initial_balance:.0f}')
+    plt.fill_between(range(len(balance)), initial_balance, balance, where=(balance >= initial_balance), color='green', alpha=0.3)
+    plt.fill_between(range(len(balance)), initial_balance, balance, where=(balance < initial_balance), color='red', alpha=0.3)
+    plt.title(f"📈 Кривая доходности: {period_name}", fontsize=12, fontweight='bold')
     plt.xlabel("Номер сделки")
     plt.ylabel("Баланс ($)")
+    plt.legend()
     plt.grid(True, linestyle=':', alpha=0.6)
     plt.tight_layout()
     
@@ -332,11 +361,12 @@ def get_stats_text_short(df, title):
         f"💰 P&L: ${total_pnl:.2f}"
     )
 
-def get_backtest_stats_text(trades, initial_balance):
+def get_backtest_stats_text(trades, initial_balance, period_name=""):
     if not trades:
-        return "📭 Нет сделок в этом периоде."
+        return f"📊 **Статистика бэктеста: {period_name}**\n\n📭 Нет сделок в этом периоде."
+    
     total = len(trades)
-    wins = len([t for t in trades if t[6] > 0])  # pnl > 0
+    wins = len([t for t in trades if t[6] > 0])
     losses = len([t for t in trades if t[6] < 0])
     wr = wins/total*100 if total else 0
     total_pnl = sum(t[6] for t in trades)
@@ -344,18 +374,32 @@ def get_backtest_stats_text(trades, initial_balance):
     avg_pnl = total_pnl / total if total else 0
     best = max(t[6] for t in trades) if trades else 0
     worst = min(t[6] for t in trades) if trades else 0
+    
+    # Расчёт максимальной просадки от начального баланса
+    balance = initial_balance
+    max_balance = initial_balance
+    max_drawdown = 0
+    for trade in trades:
+        balance += trade[6]
+        if balance > max_balance:
+            max_balance = balance
+        drawdown = (max_balance - balance) / max_balance * 100 if max_balance > 0 else 0
+        if drawdown > max_drawdown:
+            max_drawdown = drawdown
+    
     return (
-        f"📊 **Статистика бэктеста**\n\n"
-        f"💰 Начальный баланс: ${initial_balance:.2f}\n"
-        f"💰 Конечный баланс: ${final_balance:.2f}\n"
-        f"📈 Общий P&L: ${total_pnl:.2f}\n\n"
-        f"📋 Всего сделок: {total}\n"
+        f"📊 **Статистика бэктеста: {period_name}**\n\n"
+        f"💰 Начальный баланс: **${initial_balance:.2f}**\n"
+        f"💰 Конечный баланс: **${final_balance:.2f}**\n"
+        f"📈 Общий P&L: **${total_pnl:+.2f}**\n"
+        f"📉 Макс. просадка: **{max_drawdown:.1f}%**\n\n"
+        f"📋 Всего сделок: **{total}**\n"
         f"✅ Тейков: {wins}\n"
         f"❌ Стопов: {losses}\n"
-        f"🎯 Винрейт: {wr:.1f}%\n"
-        f"📊 Средняя сделка: ${avg_pnl:.2f}\n"
-        f"🏆 Лучшая: +${best:.2f}\n"
-        f"💀 Худшая: ${worst:.2f}"
+        f"🎯 Винрейт: **{wr:.1f}%**\n"
+        f"📊 Средняя сделка: **${avg_pnl:.2f}**\n"
+        f"🏆 Лучшая сделка: **+${best:.2f}**\n"
+        f"💀 Худшая сделка: **${worst:.2f}**"
     )
 
 # ==================================================
@@ -444,8 +488,8 @@ def backtest_menu():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📋 Периоды", callback_data="backtest_list_periods")],
         [InlineKeyboardButton(text="➕ Новый период", callback_data="backtest_add_period")],
-        [InlineKeyboardButton(text="📊 Статистика", callback_data="backtest_all_stats")],
-        [InlineKeyboardButton(text="📎 Excel", callback_data="backtest_all_excel")],
+        [InlineKeyboardButton(text="📊 Общая статистика", callback_data="backtest_all_stats")],
+        [InlineKeyboardButton(text="📎 Excel (все)", callback_data="backtest_all_excel")],
         [InlineKeyboardButton(text="🗑 Очистить всё", callback_data="backtest_clear_all")],
         [InlineKeyboardButton(text="🔙 Назад", callback_data="back")]
     ])
@@ -454,9 +498,8 @@ def backtest_periods_kb(periods):
     buttons = []
     for p in periods:
         period_id = p[0]
-        period_start = p[2]
-        period_end = p[3]
-        buttons.append([InlineKeyboardButton(text=f"📅 {period_start} — {period_end}", callback_data=f"btperiod_view_{period_id}")])
+        period_name = p[2]
+        buttons.append([InlineKeyboardButton(text=f"📊 {period_name}", callback_data=f"btperiod_view_{period_id}")])
     buttons.append([InlineKeyboardButton(text="➕ Новый период", callback_data="backtest_add_period")])
     buttons.append([InlineKeyboardButton(text="🗑 Очистить всё", callback_data="backtest_clear_all")])
     buttons.append([InlineKeyboardButton(text="🔙 Назад", callback_data="back")])
@@ -470,6 +513,17 @@ def backtest_period_menu_kb(period_id):
         [InlineKeyboardButton(text="📎 Excel периода", callback_data=f"bt_excel_{period_id}")],
         [InlineKeyboardButton(text="🗑 Удалить период", callback_data=f"bt_delete_period_{period_id}")],
         [InlineKeyboardButton(text="🔙 К списку", callback_data="backtest_list_periods")]
+    ])
+
+def timeframe_kb():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="15м", callback_data="tf_15m"),
+         InlineKeyboardButton(text="1ч", callback_data="tf_1h"),
+         InlineKeyboardButton(text="4ч", callback_data="tf_4h")],
+        [InlineKeyboardButton(text="1д", callback_data="tf_1d"),
+         InlineKeyboardButton(text="1н", callback_data="tf_1w"),
+         InlineKeyboardButton(text="1м", callback_data="tf_1M")],
+        [InlineKeyboardButton(text="✅ Готово", callback_data="tf_done")]
     ])
 
 # ---------- КЛАВИАТУРЫ РЕАЛЬНОЙ ТОРГОВЛИ ----------
@@ -626,7 +680,6 @@ def real_filter_date_kb():
         [InlineKeyboardButton(text="📊 Месяц", callback_data="real_filter_date_month")],
         [InlineKeyboardButton(text="🔙 Назад", callback_data="real_filter_menu")]
     ])
-
 # ==================================================
 # БЛОК 7: FSM
 # ==================================================
@@ -1139,27 +1192,27 @@ async def clear_yes(call: CallbackQuery):
 # ==================================================
 
 class BacktestPeriodForm(StatesGroup):
-    period_start = State()
-    period_end = State()
+    name = State()
+    asset = State()
     initial_balance = State()
+    add_timeframe = State()
+    current_timeframe = State()
+    current_link = State()
 
 class BacktestTradeForm(StatesGroup):
     period_id = State()
-    asset = State()
+    trade_date = State()
     direction = State()
     entry_price = State()
     exit_price = State()
     volume = State()
     result = State()
-    trade_date = State()
     comment = State()
-    link_chart = State()
 
 # ---------- ГЛАВНОЕ МЕНЮ БЭКТЕСТА ----------
 @dp.callback_query(F.data == "mode_backtest")
 async def mode_backtest(call: CallbackQuery, state: FSMContext):
     await state.clear()
-    lang = get_user_lang(call.from_user.id)
     await call.message.edit_text("🔄 **Бэктест**\n\nВыберите действие:", parse_mode="Markdown", reply_markup=backtest_menu())
     await call.answer()
 
@@ -1177,45 +1230,76 @@ async def bt_list_periods(call: CallbackQuery):
 @dp.callback_query(F.data == "backtest_add_period")
 async def bt_add_period(call: CallbackQuery, state: FSMContext):
     await state.clear()
-    await state.set_state(BacktestPeriodForm.period_start)
-    await call.message.edit_text("📅 Введите НАЧАЛО периода (ДД.ММ.ГГГГ):", reply_markup=back_kb())
+    await state.set_state(BacktestPeriodForm.name)
+    await call.message.edit_text("📝 Введите **название периода** (например: 'Тест стратегии 1'):", reply_markup=back_kb())
     await call.answer()
 
-@dp.message(BacktestPeriodForm.period_start)
-async def bt_period_start(msg: Message, state: FSMContext):
-    try:
-        d = datetime.strptime(msg.text.strip(), "%d.%m.%Y").strftime("%Y-%m-%d")
-        await state.update_data(period_start=d)
-        await state.set_state(BacktestPeriodForm.period_end)
-        await msg.answer("📅 Введите КОНЕЦ периода (ДД.ММ.ГГГГ):", reply_markup=back_kb())
-    except:
-        await msg.answer("❌ Ошибка! Введите дату в формате ДД.ММ.ГГГГ", reply_markup=back_kb())
+@dp.message(BacktestPeriodForm.name)
+async def bt_period_name(msg: Message, state: FSMContext):
+    await state.update_data(name=msg.text.strip())
+    await state.set_state(BacktestPeriodForm.asset)
+    await msg.answer("🪙 Введите **актив** для этого периода (например: BTCUSDT, EURUSD):", reply_markup=back_kb())
 
-@dp.message(BacktestPeriodForm.period_end)
-async def bt_period_end(msg: Message, state: FSMContext):
-    try:
-        d = datetime.strptime(msg.text.strip(), "%d.%m.%Y").strftime("%Y-%m-%d")
-        await state.update_data(period_end=d)
-        await state.set_state(BacktestPeriodForm.initial_balance)
-        await msg.answer("💰 Введите начальный баланс для этого периода (в $):", reply_markup=back_kb())
-    except:
-        await msg.answer("❌ Ошибка! Введите дату в формате ДД.ММ.ГГГГ", reply_markup=back_kb())
+@dp.message(BacktestPeriodForm.asset)
+async def bt_period_asset(msg: Message, state: FSMContext):
+    await state.update_data(asset=msg.text.upper())
+    await state.set_state(BacktestPeriodForm.initial_balance)
+    await msg.answer("💰 Введите **начальный баланс** для этого периода (в $):", reply_markup=back_kb())
 
 @dp.message(BacktestPeriodForm.initial_balance)
 async def bt_initial_balance(msg: Message, state: FSMContext):
     try:
         balance = float(msg.text.replace(",", "."))
-        data = await state.get_data()
-        period_id = save_backtest_period(
-            user_id=msg.from_user.id,
-            period_start=data['period_start'],
-            period_end=data['period_end'],
-            initial_balance=balance
-        )
-        await state.clear()
-        await msg.answer(f"✅ Период создан! ID: {period_id}\n\nТеперь вы можете добавлять сделки в этот период.", reply_markup=backtest_menu())
+        await state.update_data(initial_balance=balance)
+        await state.set_state(BacktestPeriodForm.add_timeframe)
+        await msg.answer("🔗 **Добавьте ссылки на графики по таймфреймам**\n\nВыберите таймфрейм, затем отправьте ссылку.\nМожно добавить несколько, можно пропустить.\n\nКогда закончите, нажмите «✅ Готово»:", reply_markup=timeframe_kb())
     except:
         await msg.answer("❌ Ошибка! Введите число.", reply_markup=back_kb())
+
+# ---------- ДОБАВЛЕНИЕ ТАЙМФРЕЙМОВ ----------
+@dp.callback_query(F.data.startswith("tf_") and F.data != "tf_done")
+async def bt_select_timeframe(call: CallbackQuery, state: FSMContext):
+    tf = call.data.split("_")[1]
+    await state.update_data(current_timeframe=tf)
+    await state.set_state(BacktestPeriodForm.current_link)
+    await call.message.edit_text(f"🔗 Введите ссылку для таймфрейма **{tf}**:\n(или отправьте 0, чтобы пропустить)", reply_markup=back_kb())
+    await call.answer()
+
+@dp.message(BacktestPeriodForm.current_link)
+async def bt_save_link(msg: Message, state: FSMContext):
+    link = msg.text.strip()
+    data = await state.get_data()
+    tf = data.get('current_timeframe')
+    
+    if link != "0":
+        if not (link.startswith("http://") or link.startswith("https://")):
+            await msg.answer("❌ Ошибка! Ссылка должна начинаться с http:// или https://\nВведите 0, если ссылки нет.", reply_markup=back_kb())
+            return
+        links = data.get('links', {})
+        links[tf] = link
+        await state.update_data(links=links)
+    
+    await state.set_state(BacktestPeriodForm.add_timeframe)
+    await msg.answer("🔗 Ссылка сохранена!\n\nВыберите следующий таймфрейм или нажмите «✅ Готово»:", reply_markup=timeframe_kb())
+
+@dp.callback_query(F.data == "tf_done")
+async def bt_timeframe_done(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    period_id = save_backtest_period(
+        user_id=call.from_user.id,
+        name=data['name'],
+        asset=data['asset'],
+        initial_balance=data['initial_balance']
+    )
+    
+    # Сохраняем все ссылки
+    links = data.get('links', {})
+    for tf, link in links.items():
+        save_backtest_link(period_id, tf, link)
+    
+    await state.clear()
+    await call.message.edit_text(f"✅ **Период «{data['name']}» создан!**\n\n🪙 Актив: {data['asset']}\n💰 Баланс: ${data['initial_balance']:.2f}\n\nТеперь вы можете добавлять сделки в этот период.", parse_mode="Markdown", reply_markup=backtest_menu())
+    await call.answer()
 
 # ---------- ПРОСМОТР ПЕРИОДА ----------
 @dp.callback_query(F.data.startswith("btperiod_view_"))
@@ -1226,18 +1310,25 @@ async def bt_view_period(call: CallbackQuery):
         await call.answer("Период не найден", show_alert=True)
         return
     
+    links = get_backtest_links(period_id)
+    links_text = "\n".join([f"🔗 {tf}: {link}" for tf, link in links]) if links else "нет ссылок"
+    
     text = (
-        f"📋 **Период бэктеста #{period[0]}**\n\n"
-        f"📅 Период: {period[2]} — {period[3]}\n"
+        f"📋 **Период: {period[2]}**\n\n"
+        f"🪙 Актив: {period[3]}\n"
         f"💰 Начальный баланс: ${period[4]:.2f}\n"
+        f"🔗 Ссылки:\n{links_text}\n"
     )
     
     trades = get_backtest_trades(period_id)
     if trades:
+        total_pnl = sum(t[6] for t in trades)
+        final_balance = period[4] + total_pnl
+        text += f"\n📊 **Итог:**\n💰 Текущий баланс: ${final_balance:.2f}\n📈 Общий P&L: ${total_pnl:+.2f}\n"
         text += f"\n📊 **Последние сделки:**\n"
         for trade in trades[-5:]:
             result_emoji = "✅" if trade[6] > 0 else ("❌" if trade[6] < 0 else "⚖️")
-            text += f"{result_emoji} {trade[1]} | ${trade[6]:.0f}\n"
+            text += f"{result_emoji} {trade[1]} | {trade[2]} | ${trade[6]:.0f}\n"
     else:
         text += "\n📭 Нет сделок в этом периоде."
     
@@ -1250,13 +1341,22 @@ async def bt_add_trade(call: CallbackQuery, state: FSMContext):
     period_id = int(call.data.split("_")[3])
     await state.clear()
     await state.update_data(period_id=period_id)
-    await state.set_state(BacktestTradeForm.asset)
-    await call.message.edit_text("📝 Введите тикер (BTC, ETH, TON, AAPL):", reply_markup=back_kb())
+    await state.set_state(BacktestTradeForm.trade_date)
+    await call.message.edit_text("📅 Введите **дату сделки** (ДД.ММ.ГГГГ) или 'сегодня':", reply_markup=back_kb())
     await call.answer()
 
-@dp.message(BacktestTradeForm.asset)
-async def bt_trade_asset(msg: Message, state: FSMContext):
-    await state.update_data(asset=msg.text.upper())
+@dp.message(BacktestTradeForm.trade_date)
+async def bt_trade_date(msg: Message, state: FSMContext):
+    dstr = msg.text.strip().lower()
+    if dstr in ["сегодня", "today"]:
+        trade_date = datetime.now().strftime("%Y-%m-%d")
+    else:
+        try:
+            trade_date = datetime.strptime(dstr, "%d.%m.%Y").strftime("%Y-%m-%d")
+        except:
+            await msg.answer("❌ Ошибка! Введите дату в формате ДД.ММ.ГГГГ", reply_markup=back_kb())
+            return
+    await state.update_data(trade_date=trade_date)
     await state.set_state(BacktestTradeForm.direction)
     await msg.answer("📈 Выберите направление:", reply_markup=backtest_direction_kb())
 
@@ -1264,14 +1364,14 @@ async def bt_trade_asset(msg: Message, state: FSMContext):
 async def bt_trade_direction_long(call: CallbackQuery, state: FSMContext):
     await state.update_data(direction="LONG")
     await state.set_state(BacktestTradeForm.entry_price)
-    await call.message.edit_text("💰 Введите цену входа:", reply_markup=back_kb())
+    await call.message.edit_text("💰 Введите **цену входа**:", reply_markup=back_kb())
     await call.answer()
 
 @dp.callback_query(F.data == "bt_dir_SHORT")
 async def bt_trade_direction_short(call: CallbackQuery, state: FSMContext):
     await state.update_data(direction="SHORT")
     await state.set_state(BacktestTradeForm.entry_price)
-    await call.message.edit_text("💰 Введите цену входа:", reply_markup=back_kb())
+    await call.message.edit_text("💰 Введите **цену входа**:", reply_markup=back_kb())
     await call.answer()
 
 @dp.message(BacktestTradeForm.entry_price)
@@ -1279,7 +1379,7 @@ async def bt_trade_entry(msg: Message, state: FSMContext):
     try:
         await state.update_data(entry_price=float(msg.text.replace(",", ".")))
         await state.set_state(BacktestTradeForm.exit_price)
-        await msg.answer("💰 Введите цену выхода:", reply_markup=back_kb())
+        await msg.answer("💰 Введите **цену выхода**:", reply_markup=back_kb())
     except:
         await msg.answer("❌ Ошибка! Введите число.", reply_markup=back_kb())
 
@@ -1288,7 +1388,7 @@ async def bt_trade_exit(msg: Message, state: FSMContext):
     try:
         await state.update_data(exit_price=float(msg.text.replace(",", ".")))
         await state.set_state(BacktestTradeForm.volume)
-        await msg.answer("📊 Введите объём позиции:", reply_markup=back_kb())
+        await msg.answer("📊 Введите **объём позиции**:", reply_markup=back_kb())
     except:
         await msg.answer("❌ Ошибка! Введите число.", reply_markup=back_kb())
 
@@ -1313,54 +1413,28 @@ async def bt_trade_result(call: CallbackQuery, state: FSMContext):
     await state.update_data(result=result)
     if result == "BU":
         await state.update_data(pnl=0)
-    await state.set_state(BacktestTradeForm.trade_date)
-    await call.message.edit_text("📅 Введите дату сделки (ДД.ММ.ГГГГ) или 'сегодня':", reply_markup=back_kb())
-    await call.answer()
-
-@dp.message(BacktestTradeForm.trade_date)
-async def bt_trade_date(msg: Message, state: FSMContext):
-    dstr = msg.text.strip().lower()
-    if dstr in ["сегодня", "today"]:
-        trade_date = datetime.now().strftime("%Y-%m-%d")
-    else:
-        try:
-            trade_date = datetime.strptime(dstr, "%d.%m.%Y").strftime("%Y-%m-%d")
-        except:
-            await msg.answer("❌ Ошибка! Введите дату в формате ДД.ММ.ГГГГ", reply_markup=back_kb())
-            return
-    await state.update_data(trade_date=trade_date)
     await state.set_state(BacktestTradeForm.comment)
-    await msg.answer("📝 Введите комментарий (отправьте '-' чтобы пропустить):", reply_markup=back_kb())
+    await call.message.edit_text("📝 Введите **комментарий** (отправьте '-' чтобы пропустить):", reply_markup=back_kb())
+    await call.answer()
 
 @dp.message(BacktestTradeForm.comment)
 async def bt_trade_comment(msg: Message, state: FSMContext):
     com = msg.text.strip()
     await state.update_data(comment="" if com == "-" else com)
-    await state.set_state(BacktestTradeForm.link_chart)
-    await msg.answer("🔗 Введите ссылку на скриншот (0 если нет):", reply_markup=back_kb())
-
-@dp.message(BacktestTradeForm.link_chart)
-async def bt_trade_link(msg: Message, state: FSMContext):
-    link = msg.text.strip()
-    if link != "0" and not (link.startswith("http://") or link.startswith("https://")):
-        await msg.answer("❌ Ошибка! Ссылка должна начинаться с http:// или https://\nВведите 0, если ссылки нет.", reply_markup=back_kb())
-        return
-    link_final = "-" if link == "0" else link
     data = await state.get_data()
     
     save_backtest_trade(
         period_id=data['period_id'],
-        asset=data['asset'],
+        trade_date=data['trade_date'],
         direction=data['direction'],
         entry_price=data['entry_price'],
         exit_price=data['exit_price'],
         volume=data['volume'],
         pnl=data['pnl'],
         result=data['result'],
-        trade_date=data['trade_date'],
-        comment=data['comment'],
-        link_chart=link_final
+        comment=data['comment']
     )
+    
     await state.clear()
     await msg.answer("✅ Сделка добавлена в бэктест!", reply_markup=backtest_menu())
 
@@ -1373,7 +1447,7 @@ async def bt_show_stats(call: CallbackQuery):
         await call.answer("Период не найден", show_alert=True)
         return
     trades = get_backtest_trades(period_id)
-    text = get_backtest_stats_text(trades, period[4])
+    text = get_backtest_stats_text(trades, period[4], period[2])
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=backtest_period_menu_kb(period_id))
     await call.answer()
 
@@ -1390,9 +1464,9 @@ async def bt_show_chart(call: CallbackQuery):
         await call.answer("Нет сделок для построения графика", show_alert=True)
         return
     
-    chart_path = generate_backtest_equity_chart(trades, period[4], period_id)
+    chart_path = generate_backtest_equity_chart(trades, period[4], period_id, period[2])
     if chart_path:
-        await call.message.answer_photo(photo=FSInputFile(chart_path), caption=f"📈 График доходности бэктеста #{period_id}")
+        await call.message.answer_photo(photo=FSInputFile(chart_path), caption=f"📈 Кривая доходности: {period[2]}")
         os.remove(chart_path)
     await call.answer()
 
@@ -1413,28 +1487,34 @@ async def bt_export_excel(call: CallbackQuery):
     data = []
     for t in trades:
         data.append({
-            'trade_date': t[8],
-            'asset': t[1],
+            'trade_date': t[1],
             'direction': t[2],
             'entry_price': t[3],
             'exit_price': t[4],
             'volume': t[5],
             'pnl': t[6],
             'result': t[7],
-            'comment': t[8],
-            'link_chart': t[9]
+            'comment': t[8]
         })
     df = pd.DataFrame(data)
-    df = df[['trade_date', 'asset', 'direction', 'entry_price', 'exit_price', 'volume', 'pnl', 'result', 'comment', 'link_chart']]
-    df.columns = ['📅 Дата', '🪙 Актив', '📈 Направление', '💰 Вход', '💰 Выход', '📊 Объём', '💵 P&L', '🎯 Исход', '📝 Комментарий', '🔗 Ссылка']
+    df = df[['trade_date', 'direction', 'entry_price', 'exit_price', 'volume', 'pnl', 'result', 'comment']]
+    df.columns = ['📅 Дата', '📈 Направление', '💰 Вход', '💰 Выход', '📊 Объём', '💵 P&L', '🎯 Исход', '📝 Комментарий']
     df['📈 Направление'] = df['📈 Направление'].replace({'LONG': '🟢 LONG', 'SHORT': '🔴 SHORT'})
     df['🎯 Исход'] = df['🎯 Исход'].replace({'TAKE': '✅ Тейк', 'STOP': '❌ Стоп', 'BU': '⚖️ БУ'})
     df = df.sort_values('📅 Дата', ascending=False)
     
+    # Добавляем информацию о периоде
+    period_info = pd.DataFrame([{
+        'period_name': period[2],
+        'asset': period[3],
+        'initial_balance': period[4]
+    }])
+    
     fname = f"backtest_period_{period_id}.xlsx"
     with pd.ExcelWriter(fname, engine='openpyxl') as w:
-        df.to_excel(w, sheet_name='Бэктест', index=False)
-        ws = w.sheets['Бэктест']
+        period_info.to_excel(w, sheet_name='Информация', index=False)
+        df.to_excel(w, sheet_name='Сделки', index=False)
+        ws = w.sheets['Сделки']
         header_font = Font(bold=True, color="FFFFFF", size=11)
         header_fill = PatternFill(start_color="2b6cb0", end_color="2b6cb0", fill_type="solid")
         for col in range(1, len(df.columns)+1):
@@ -1450,7 +1530,7 @@ async def bt_export_excel(call: CallbackQuery):
             ws.column_dimensions[col_letter].width = min(max_len+2, 30)
         ws.freeze_panes = 'A2'
     
-    await call.message.answer_document(document=FSInputFile(fname), caption=f"📊 Отчёт бэктеста #{period_id}")
+    await call.message.answer_document(document=FSInputFile(fname), caption=f"📊 Отчёт бэктеста: {period[2]}")
     os.remove(fname)
     await call.answer()
 
@@ -1459,7 +1539,7 @@ async def bt_export_excel(call: CallbackQuery):
 async def bt_delete_period_confirm(call: CallbackQuery, state: FSMContext):
     period_id = int(call.data.split("_")[3])
     await state.update_data(delete_period_id=period_id)
-    await call.message.edit_text(f"⚠️ Удалить период #{period_id} и все его сделки?", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+    await call.message.edit_text(f"⚠️ Удалить период и все его сделки?", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✅ Да", callback_data="bt_delete_period_yes"),
          InlineKeyboardButton(text="❌ Нет", callback_data="backtest_list_periods")]
     ]))
@@ -1485,13 +1565,12 @@ async def bt_all_stats(call: CallbackQuery):
     text = "📊 **Общая статистика бэктестов**\n\n"
     for p in periods:
         period_id = p[0]
-        period_start = p[2]
-        period_end = p[3]
+        period_name = p[2]
         initial = p[4]
         trades = get_backtest_trades(period_id)
         total_pnl = sum(t[6] for t in trades)
         final = initial + total_pnl
-        text += f"📅 {period_start} — {period_end}\n💰 Итог: ${final:.2f} (P&L: ${total_pnl:+.2f})\n\n"
+        text += f"📊 {period_name}\n💰 Итог: ${final:.2f} (P&L: ${total_pnl:+.2f})\n\n"
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=backtest_menu())
     await call.answer()
 
@@ -1506,25 +1585,23 @@ async def bt_all_excel(call: CallbackQuery):
     all_data = []
     for p in periods:
         period_id = p[0]
-        period_start = p[2]
-        period_end = p[3]
+        period_name = p[2]
+        asset = p[3]
         initial = p[4]
         trades = get_backtest_trades(period_id)
         for t in trades:
             all_data.append({
-                'period_start': period_start,
-                'period_end': period_end,
+                'period_name': period_name,
+                'asset': asset,
                 'initial_balance': initial,
-                'trade_date': t[8],
-                'asset': t[1],
+                'trade_date': t[1],
                 'direction': t[2],
                 'entry_price': t[3],
                 'exit_price': t[4],
                 'volume': t[5],
                 'pnl': t[6],
                 'result': t[7],
-                'comment': t[8],
-                'link_chart': t[9]
+                'comment': t[8]
             })
     
     if not all_data:
@@ -1532,11 +1609,11 @@ async def bt_all_excel(call: CallbackQuery):
         return
     
     df = pd.DataFrame(all_data)
-    df = df[['period_start', 'period_end', 'initial_balance', 'trade_date', 'asset', 'direction', 'entry_price', 'exit_price', 'volume', 'pnl', 'result', 'comment', 'link_chart']]
-    df.columns = ['📅 Начало периода', '📅 Конец периода', '💰 Начальный баланс', '📅 Дата сделки', '🪙 Актив', '📈 Направление', '💰 Вход', '💰 Выход', '📊 Объём', '💵 P&L', '🎯 Исход', '📝 Комментарий', '🔗 Ссылка']
+    df = df[['period_name', 'asset', 'initial_balance', 'trade_date', 'direction', 'entry_price', 'exit_price', 'volume', 'pnl', 'result', 'comment']]
+    df.columns = ['📊 Период', '🪙 Актив', '💰 Начальный баланс', '📅 Дата', '📈 Направление', '💰 Вход', '💰 Выход', '📊 Объём', '💵 P&L', '🎯 Исход', '📝 Комментарий']
     df['📈 Направление'] = df['📈 Направление'].replace({'LONG': '🟢 LONG', 'SHORT': '🔴 SHORT'})
     df['🎯 Исход'] = df['🎯 Исход'].replace({'TAKE': '✅ Тейк', 'STOP': '❌ Стоп', 'BU': '⚖️ БУ'})
-    df = df.sort_values(['📅 Начало периода', '📅 Дата сделки'], ascending=[False, False])
+    df = df.sort_values(['📊 Период', '📅 Дата'], ascending=[True, False])
     
     fname = f"backtest_all_{call.from_user.id}.xlsx"
     with pd.ExcelWriter(fname, engine='openpyxl') as w:
