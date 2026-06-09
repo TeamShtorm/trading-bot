@@ -1,3 +1,6 @@
+# ==================================================
+# БЛОК 1: ИМПОРТЫ И КОНФИГ
+# ==================================================
 import asyncio
 import sqlite3
 import os
@@ -14,13 +17,14 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 from aiohttp import web
 
-# ========== КОНФИГ ==========
 BOT_TOKEN = "8803530037:AAHVuMAb6gIzGXBKH8qbteZtFyttz6_hzh0"
 DB_NAME = "trades.db"
 BT_DB_NAME = "backtests.db"
 TRADES_PER_PAGE = 5
 
-# ========== БАЗЫ ДАННЫХ ==========
+# ==================================================
+# БЛОК 2: БАЗЫ ДАННЫХ РЕАЛЬНОЙ ТОРГОВЛИ
+# ==================================================
 def init_dbs():
     conn = sqlite3.connect(DB_NAME)
     conn.execute("""
@@ -140,6 +144,9 @@ def clear_trades(user_id):
     conn.commit()
     conn.close()
 
+# ==================================================
+# БЛОК 3: БАЗЫ ДАННЫХ БЭКТЕСТА
+# ==================================================
 def save_backtest(user_id, period_start, period_end, timeframe, asset, direction, entry_price, exit_price, link_chart):
     conn = sqlite3.connect(BT_DB_NAME)
     conn.execute("""
@@ -172,7 +179,9 @@ def clear_backtests(user_id):
     conn.commit()
     conn.close()
 
-# ========== ГРАФИК ==========
+# ==================================================
+# БЛОК 4: ГРАФИК И СТАТИСТИКА
+# ==================================================
 def generate_equity_chart(df, user_id):
     if df.empty:
         return None
@@ -195,7 +204,6 @@ def generate_equity_chart(df, user_id):
     plt.close()
     return fname
 
-# ========== СТАТИСТИКА ==========
 def get_stats_text(df):
     if df.empty:
         return "📭 Нет данных."
@@ -247,7 +255,9 @@ def get_stats_text_short(df, title):
         f"💰 P&L: ${total_pnl:.2f}"
     )
 
-# ========== EXCEL ==========
+# ==================================================
+# БЛОК 5: EXCEL
+# ==================================================
 def export_real_to_excel(df, user_id):
     if df.empty:
         return None
@@ -305,7 +315,9 @@ def export_backtest_to_excel(df, user_id):
         ws.freeze_panes = 'A2'
     return fname
 
-# ========== КЛАВИАТУРЫ ==========
+# ==================================================
+# БЛОК 6: КЛАВИАТУРЫ
+# ==================================================
 def main_menu(lang):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📊 Реальная торговля", callback_data="mode_real")],
@@ -477,7 +489,9 @@ def filter_date_kb():
         [InlineKeyboardButton(text="🔙 Назад", callback_data="filter_menu")]
     ])
 
-# ========== FSM ==========
+# ==================================================
+# БЛОК 7: FSM
+# ==================================================
 class TradeForm(StatesGroup):
     asset = State()
     direction = State()
@@ -503,7 +517,9 @@ class BacktestForm(StatesGroup):
     exit_price = State()
     link_chart = State()
 
-# ========== ВЕБ-СЕРВЕР ДЛЯ RENDER ==========
+# ==================================================
+# БЛОК 8: ВЕБ-СЕРВЕР ДЛЯ RENDER
+# ==================================================
 async def health_check(request):
     return web.Response(text="Bot is alive!")
 
@@ -519,11 +535,12 @@ async def run_web_server():
     print(f"🌐 Веб-сервер запущен на порту {port}")
     await asyncio.Event().wait()
 
-# ========== ОБРАБОТЧИКИ ==========
+# ==================================================
+# БЛОК 9: ОБРАБОТЧИКИ СТАРТ И НАСТРОЙКИ
+# ==================================================
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# ---------- СТАРТ ----------
 @dp.message(CommandStart())
 async def cmd_start(msg: Message, state: FSMContext):
     await state.clear()
@@ -561,7 +578,6 @@ async def back(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text("🎛 **Выберите режим работы:**", parse_mode="Markdown", reply_markup=main_menu(lang))
     await call.answer()
 
-# ---------- НАСТРОЙКИ ----------
 @dp.callback_query(F.data == "settings_menu")
 async def settings_menu(call: CallbackQuery):
     await call.message.edit_text("⚙️ **Настройки**\n\nВыберите действие:", parse_mode="Markdown", reply_markup=settings_menu_kb())
@@ -577,7 +593,9 @@ async def support(call: CallbackQuery):
     await call.message.edit_text("📞 **Поддержка**\n\nПо вопросам пишите: @ваш_username", parse_mode="Markdown", reply_markup=settings_menu_kb())
     await call.answer()
 
-# ---------- ДОБАВЛЕНИЕ СДЕЛКИ ----------
+# ==================================================
+# БЛОК 10: ОБРАБОТЧИКИ РЕАЛЬНОЙ ТОРГОВЛИ (ДОБАВЛЕНИЕ СДЕЛКИ)
+# ==================================================
 @dp.callback_query(F.data == "add_trade")
 async def add_trade(call: CallbackQuery, state: FSMContext):
     await state.clear()
@@ -716,7 +734,9 @@ async def get_emotion(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text("✅ Сделка сохранена!", reply_markup=real_menu())
     await call.answer()
 
-# ---------- СПИСОК СДЕЛОК С ФИЛЬТРАМИ И ПАГИНАЦИЕЙ ----------
+# ==================================================
+# БЛОК 11: ОБРАБОТЧИКИ СПИСКА СДЕЛОК (ФИЛЬТРЫ И ПАГИНАЦИЯ)
+# ==================================================
 @dp.callback_query(F.data == "list_trades")
 async def list_trades(call: CallbackQuery, state: FSMContext):
     await state.update_data(page=1, result_filter="all", asset_filter=None, date_filter=None)
@@ -836,7 +856,6 @@ async def view_trade(call: CallbackQuery):
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=view_trade_kb(trade_id))
     await call.answer()
 
-# ---------- УДАЛЕНИЕ ----------
 @dp.callback_query(F.data.startswith("del_"))
 async def delete_confirm(call: CallbackQuery, state: FSMContext):
     trade_id = int(call.data.split("_")[1])
@@ -857,7 +876,9 @@ async def delete_execute(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text("🗑 Сделка удалена!", reply_markup=real_menu())
     await call.answer()
 
-# ---------- СТАТИСТИКА (меню) ----------
+# ==================================================
+# БЛОК 12: ОБРАБОТЧИКИ СТАТИСТИКИ
+# ==================================================
 @dp.callback_query(F.data == "real_stats_show")
 async def real_stats_menu(call: CallbackQuery):
     await call.message.edit_text("📊 **Выберите тип статистики:**", parse_mode="Markdown", reply_markup=stats_main_kb())
@@ -907,8 +928,6 @@ async def stats_by_date_menu(call: CallbackQuery):
 @dp.callback_query(F.data.startswith("stats_date_"))
 async def stats_date_show(call: CallbackQuery):
     period = call.data.split("_")[2]
-    days = {"day": 1, "week": 7, "month": 30}
-    start = (datetime.now() - timedelta(days=days[period])).strftime("%Y-%m-%d")
     df = get_trades_filtered(call.from_user.id, date_filter=period)
     titles = {"day": "За сегодня", "week": "За неделю", "month": "За месяц"}
     text = get_stats_text_short(df, titles.get(period, "Статистика"))
@@ -936,19 +955,9 @@ async def stats_emotion_show(call: CallbackQuery):
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=stats_emotions_kb())
     await call.answer()
 
-# ---------- БЭКТЕСТ СТАТИСТИКА ----------
-@dp.callback_query(F.data == "backtest_stats_show")
-async def backtest_stats_show(call: CallbackQuery):
-    df = get_backtests(call.from_user.id)
-    if df.empty:
-        await call.answer("📭 Нет данных", show_alert=True)
-        return
-    total = len(df)
-    text = f"📊 **Статистика бэктестов**\n\n📋 Всего бэктестов: {total}"
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=backtest_menu())
-    await call.answer()
-
-# ---------- EXCEL ----------
+# ==================================================
+# БЛОК 13: ОБРАБОТЧИКИ EXCEL И ОЧИСТКИ
+# ==================================================
 @dp.callback_query(F.data == "real_excel")
 async def real_excel(call: CallbackQuery):
     df = get_trades_filtered(call.from_user.id)
@@ -971,7 +980,6 @@ async def backtest_excel(call: CallbackQuery):
     os.remove(fname)
     await call.answer()
 
-# ---------- ОЧИСТКА ----------
 @dp.callback_query(F.data == "real_clear")
 async def real_clear_confirm(call: CallbackQuery):
     await call.message.edit_text("⚠️ Удалить ВСЕ сделки реальной торговли?", reply_markup=confirm_kb())
@@ -988,7 +996,9 @@ async def clear_yes(call: CallbackQuery):
     await call.message.edit_text("🗑 Журнал реальной торговли очищен!", reply_markup=real_menu())
     await call.answer()
 
-# ---------- БЭКТЕСТ ----------
+# ==================================================
+# БЛОК 14: ОБРАБОТЧИКИ БЭКТЕСТА
+# ==================================================
 @dp.callback_query(F.data == "add_backtest")
 async def add_backtest(call: CallbackQuery, state: FSMContext):
     await state.clear()
@@ -1102,7 +1112,20 @@ async def view_backtest(call: CallbackQuery):
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=backtest_menu())
     await call.answer()
 
-# ---------- КОМАНДЫ ----------
+@dp.callback_query(F.data == "backtest_stats_show")
+async def backtest_stats_show(call: CallbackQuery):
+    df = get_backtests(call.from_user.id)
+    if df.empty:
+        await call.answer("📭 Нет данных", show_alert=True)
+        return
+    total = len(df)
+    text = f"📊 **Статистика бэктестов**\n\n📋 Всего бэктестов: {total}"
+    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=backtest_menu())
+    await call.answer()
+
+# ==================================================
+# БЛОК 15: КОМАНДЫ (/new, /stats, /day, /week, /month, /clear, /get_real, /get_backtest)
+# ==================================================
 @dp.message(Command("new"))
 async def cmd_new(msg: Message, state: FSMContext):
     await state.clear()
@@ -1122,7 +1145,6 @@ async def cmd_stats(msg: Message):
 
 @dp.message(Command("day"))
 async def cmd_day(msg: Message):
-    today = datetime.now().strftime("%Y-%m-%d")
     df = get_trades_filtered(msg.from_user.id, date_filter="day")
     text = get_stats_text_short(df, "📆 Статистика за сегодня")
     await msg.answer(text, parse_mode="Markdown")
@@ -1164,7 +1186,9 @@ async def cmd_get_backtest(msg: Message):
     await msg.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт (бэктест)")
     os.remove(fname)
 
-# ========== ЗАПУСК ==========
+# ==================================================
+# БЛОК 16: ЗАПУСК
+# ==================================================
 async def set_commands():
     await bot.set_my_commands([
         BotCommand(command="start", description="Главное меню"),
