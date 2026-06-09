@@ -255,6 +255,12 @@ def get_stats_text_short(df, title):
         f"💰 P&L: ${total_pnl:.2f}"
     )
 
+def get_backtest_stats_text(df):
+    if df.empty:
+        return "📭 Нет данных бэктеста."
+    total = len(df)
+    return f"📊 **Статистика бэктестов**\n\n📋 Всего бэктестов: {total}"
+
 # ==================================================
 # БЛОК 5: EXCEL
 # ==================================================
@@ -314,7 +320,7 @@ def export_backtest_to_excel(df, user_id):
             ws.column_dimensions[col_letter].width = min(max_len+2, 30)
         ws.freeze_panes = 'A2'
     return fname
-
+    
 # ==================================================
 # БЛОК 6: КЛАВИАТУРЫ
 # ==================================================
@@ -1115,11 +1121,7 @@ async def view_backtest(call: CallbackQuery):
 @dp.callback_query(F.data == "backtest_stats_show")
 async def backtest_stats_show(call: CallbackQuery):
     df = get_backtests(call.from_user.id)
-    if df.empty:
-        await call.answer("📭 Нет данных", show_alert=True)
-        return
-    total = len(df)
-    text = f"📊 **Статистика бэктестов**\n\n📋 Всего бэктестов: {total}"
+    text = get_backtest_stats_text(df)
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=backtest_menu())
     await call.answer()
 
