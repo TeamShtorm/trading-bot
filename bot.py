@@ -797,15 +797,17 @@ class BacktestTradeForm(StatesGroup):
 # ==================================================
 # БЛОК 8: ВЕБ-СЕРВЕР ДЛЯ RENDER
 # ==================================================
+from aiogram.types import Update
+
 WEBHOOK_PATH = "/webhook"
-WEBHOOK_URL = None
 
 async def health_check(request):
     return web.Response(text="Bot is alive!")
 
 async def webhook_handler(request):
     try:
-        update = await request.json()
+        update_data = await request.json()
+        update = Update.model_validate(update_data, context={"bot": bot})
         await dp.feed_update(bot, update)
         return web.Response(text="OK")
     except Exception as e:
@@ -813,17 +815,18 @@ async def webhook_handler(request):
         return web.Response(text="Error", status=500)
 
 async def on_startup():
-    webhook_url = os.environ.get("RENDER_EXTERNAL_URL")
-    if webhook_url:
-        full_url = f"{webhook_url}{WEBHOOK_PATH}"
-        await bot.set_webhook(full_url)
-        print(f"✅ Webhook set to {full_url}")
-
-async def on_shutdown():
     await bot.delete_webhook()
-    print("Webhook removed")
+    render_url = os.environ.get("RENDER_EXTERNAL_URL")
+    if render_url:
+        webhook_url = f"{render_url}{WEBHOOK_PATH}"
+        await bot.set_webhook(webhook_url)
+        print(f"✅ Webhook установлен: {webhook_url}")
+    else:
+        print("⚠️ RENDER_EXTERNAL_URL не найден")
 
 async def run_web_server():
+    await on_startup()
+    
     app = web.Application()
     app.router.add_get('/', health_check)
     app.router.add_get('/health', health_check)
@@ -835,7 +838,6 @@ async def run_web_server():
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
     
-    await on_startup()
     print(f"🌐 Веб-сервер запущен на порту {port}")
     await asyncio.Event().wait()
 
@@ -1994,6 +1996,7 @@ async def main():
     init_dbs()
     await set_commands()
     print("✅ Бот успешно запущен!")
+    # Только веб-сервер с вебхуком, никакого polling
     await run_web_server()
 
 if __name__ == "__main__":
