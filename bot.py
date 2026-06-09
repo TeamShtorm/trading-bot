@@ -320,7 +320,7 @@ def export_backtest_to_excel(df, user_id):
             ws.column_dimensions[col_letter].width = min(max_len+2, 30)
         ws.freeze_panes = 'A2'
     return fname
-    
+
 # ==================================================
 # БЛОК 6: КЛАВИАТУРЫ
 # ==================================================
@@ -343,13 +343,26 @@ def real_menu():
 
 def backtest_menu():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="➕ Бэктест", callback_data="add_backtest")],
-        [InlineKeyboardButton(text="📋 Список", callback_data="list_backtests")],
+        [InlineKeyboardButton(text="📋 Периоды", callback_data="list_backtests")],
+        [InlineKeyboardButton(text="➕ Добавить бэктест", callback_data="add_backtest")],
         [InlineKeyboardButton(text="📊 Статистика", callback_data="backtest_stats_show")],
         [InlineKeyboardButton(text="📎 Excel", callback_data="backtest_excel")],
         [InlineKeyboardButton(text="🗑 Очистить всё", callback_data="backtest_clear")],
         [InlineKeyboardButton(text="🔙 Назад", callback_data="back")]
     ])
+
+def backtest_periods_kb(backtests):
+    buttons = []
+    for bt in backtests:
+        bt_id = bt[0]
+        period_start = bt[2]
+        period_end = bt[3]
+        asset = bt[4]
+        buttons.append([InlineKeyboardButton(text=f"{asset} | {period_start} — {period_end}", callback_data=f"btview_{bt_id}")])
+    buttons.append([InlineKeyboardButton(text="➕ Добавить бэктест", callback_data="add_backtest")])
+    buttons.append([InlineKeyboardButton(text="🗑 Очистить всё", callback_data="backtest_clear")])
+    buttons.append([InlineKeyboardButton(text="🔙 Назад", callback_data="back")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def settings_menu_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -429,13 +442,6 @@ def view_trade_kb(trade_id):
         [InlineKeyboardButton(text="🗑 Удалить", callback_data=f"del_{trade_id}")],
         [InlineKeyboardButton(text="🔙 К списку", callback_data="list_trades")]
     ])
-
-def list_backtests_kb(backtests):
-    buttons = []
-    for _, row in backtests.iterrows():
-        buttons.append([InlineKeyboardButton(text=f"{row['asset']} | {row['period_start']}", callback_data=f"btview_{row['id']}")])
-    buttons.append([InlineKeyboardButton(text="🔙 Назад", callback_data="back")])
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def stats_main_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -1027,16 +1033,10 @@ async def bt_end(msg: Message, state: FSMContext):
     try:
         d = datetime.strptime(msg.text.strip(), "%d.%m.%Y").strftime("%Y-%m-%d")
         await state.update_data(period_end=d)
-        await state.set_state(BacktestForm.timeframe)
-        await msg.answer("⏱ Введите таймфрейм (M5, H1, H4, D1, W1):", reply_markup=back_kb())
+        await state.set_state(BacktestForm.asset)
+        await msg.answer("📝 Введите тикер (BTC, ETH, TON, AAPL):", reply_markup=back_kb())
     except:
         await msg.answer("❌ Ошибка! Введите дату в формате ДД.ММ.ГГГГ", reply_markup=back_kb())
-
-@dp.message(BacktestForm.timeframe)
-async def bt_tf(msg: Message, state: FSMContext):
-    await state.update_data(timeframe=msg.text.upper())
-    await state.set_state(BacktestForm.asset)
-    await msg.answer("📝 Введите тикер (BTC, ETH, TON, AAPL):", reply_markup=back_kb())
 
 @dp.message(BacktestForm.asset)
 async def bt_asset(msg: Message, state: FSMContext):
@@ -1067,70 +1067,143 @@ async def bt_exit(msg: Message, state: FSMContext):
         exit_p = float(msg.text.replace(",", "."))
         await state.update_data(exit_price=exit_p)
         await state.set_state(BacktestForm.link_chart)
-        await msg.answer("🔗 Ссылка на скриншот (0 если нет):", reply_markup=back_kb())
+        await msg.answer("🔗 Введите ссылку на скриншот (должна начинаться с http:// или https://):", reply_markup=back_kb())
     except:
         await msg.answer("❌ Ошибка! Введите число.", reply_markup=back_kb())
 
 @dp.message(BacktestForm.link_chart)
 async def bt_link(msg: Message, state: FSMContext):
-    link = msg.text if msg.text != "0" else "-"
+    link = msg.text.strip()
+    
+    # Проверка ссылки
+    if link != "0":
+        if not (link.startswith("http://") or link.startswith("https://")):
+            await msg.answer("❌ Ошибка! Ссылка должна начинаться с http:// или https://\nВведите 0, если ссылки нет.", reply_markup=back_kb())
+            return
+    
+    link_final = "-" if link == "0" else link
     data = await state.get_data()
     
-    # Сохраняем в отдельную таблицу backtests
-    conn = sqlite3.connect(BT_DB_NAME)
-    conn.execute("""
-        INSERT INTO backtests (user_id, period_start, period_end, timeframe, asset, direction, entry_price, exit_price, link_chart)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (msg.from_user.id, data['period_start'], data['period_end'], data['timeframe'],
-          data['asset'], data['direction'], data['entry_price'], data['exit_price'], link))
-    conn.commit()
-    conn.close()
-    
+    save_backtest(
+        user_id=msg.from_user.id,
+        period_start=data['period_start'],
+        period_end=data['period_end'],
+        asset=data['asset'],
+        direction=data['direction'],
+        entry_price=data['entry_price'],
+        exit_price=data['exit_price'],
+        link_chart=link_final
+    )
     await state.clear()
     await msg.answer("✅ Бэктест сохранён!", reply_markup=backtest_menu())
 
 @dp.callback_query(F.data == "list_backtests")
 async def list_backtests(call: CallbackQuery):
-    conn = sqlite3.connect(BT_DB_NAME)
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM backtests WHERE user_id = ? ORDER BY period_start DESC", (call.from_user.id,))
-    rows = cur.fetchall()
-    conn.close()
-    
-    if not rows:
+    backtests = get_backtests(call.from_user.id)
+    if not backtests:
         await call.answer("📭 Нет данных", show_alert=True)
         return
+    await call.message.edit_text("📋 **Периоды бэктестов:**\n\nВыберите период для просмотра:", parse_mode="Markdown", reply_markup=backtest_periods_kb(backtests))
+    await call.answer()
+
+@dp.callback_query(F.data.startswith("btview_"))
+async def view_backtest(call: CallbackQuery):
+    bt_id = int(call.data.split("_")[1])
+    bt = get_backtest_by_id(bt_id, call.from_user.id)
+    if not bt:
+        await call.answer("Бэктест не найден", show_alert=True)
+        return
     
-    text = "📋 **Список бэктестов:**\n\n"
-    for row in rows:
-        text += f"#{row[0]} | {row[5]} | {row[6]} | {row[1]} — {row[2]}\n"
+    # bt = (id, user_id, period_start, period_end, asset, direction, entry_price, exit_price, link_chart)
+    text = (
+        f"📋 **Бэктест #{bt[0]}**\n\n"
+        f"📅 Период: {bt[2]} — {bt[3]}\n"
+        f"🪙 Актив: {bt[4]}\n"
+        f"📈 Направление: {'🟢 LONG' if bt[5] == 'LONG' else '🔴 SHORT'}\n"
+        f"💰 Вход: ${bt[6]}\n"
+        f"💰 Выход: ${bt[7]}\n"
+        f"🔗 Ссылка: {bt[8]}"
+    )
     
-    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=backtest_menu())
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🗑 Удалить", callback_data=f"btdelete_{bt[0]}")],
+        [InlineKeyboardButton(text="🔙 К списку", callback_data="list_backtests")]
+    ])
+    await call.message.edit_text(text, parse_mode="Markdown", reply_markup=kb)
+    await call.answer()
+
+@dp.callback_query(F.data.startswith("btdelete_"))
+async def delete_backtest_confirm(call: CallbackQuery, state: FSMContext):
+    bt_id = int(call.data.split("_")[1])
+    await state.update_data(delete_bt_id=bt_id)
+    await call.message.edit_text(f"⚠️ Удалить бэктест #{bt_id}?", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Да", callback_data="btdelete_yes"),
+         InlineKeyboardButton(text="❌ Нет", callback_data="list_backtests")]
+    ]))
+    await call.answer()
+
+@dp.callback_query(F.data == "btdelete_yes")
+async def delete_backtest_execute(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    bt_id = data.get('delete_bt_id')
+    if bt_id:
+        delete_backtest(bt_id, call.from_user.id)
+    await state.clear()
+    await call.message.edit_text("🗑 Бэктест удалён!", reply_markup=backtest_menu())
     await call.answer()
 
 @dp.callback_query(F.data == "backtest_stats_show")
 async def backtest_stats_show(call: CallbackQuery):
-    conn = sqlite3.connect(BT_DB_NAME)
-    cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM backtests WHERE user_id = ?", (call.from_user.id,))
-    count = cur.fetchone()[0]
-    conn.close()
-    
+    backtests = get_backtests(call.from_user.id)
+    count = len(backtests)
     text = f"📊 **Статистика бэктестов**\n\n📋 Всего бэктестов: {count}"
     await call.message.edit_text(text, parse_mode="Markdown", reply_markup=backtest_menu())
     await call.answer()
 
 @dp.callback_query(F.data == "backtest_excel")
 async def backtest_excel(call: CallbackQuery):
-    conn = sqlite3.connect(BT_DB_NAME)
-    df = pd.read_sql_query("SELECT * FROM backtests WHERE user_id = ?", conn, params=(call.from_user.id,))
-    conn.close()
-    
-    if df.empty:
+    backtests = get_backtests(call.from_user.id)
+    if not backtests:
         await call.answer("📭 Нет данных", show_alert=True)
         return
     
-    fname = export_backtest_to_excel(df, call.from_user.id)
+    # Формируем DataFrame
+    data = []
+    for bt in backtests:
+        data.append({
+            'period_start': bt[2],
+            'period_end': bt[3],
+            'asset': bt[4],
+            'direction': bt[5],
+            'entry_price': bt[6],
+            'exit_price': bt[7],
+            'link_chart': bt[8]
+        })
+    df = pd.DataFrame(data)
+    df = df[['period_start', 'period_end', 'asset', 'direction', 'entry_price', 'exit_price', 'link_chart']]
+    df.columns = ['📅 Начало', '📅 Конец', '🪙 Актив', '📈 Направление', '💰 Вход', '💰 Выход', '🔗 Ссылка']
+    df['📈 Направление'] = df['📈 Направление'].replace({'LONG': '🟢 LONG', 'SHORT': '🔴 SHORT'})
+    df = df.sort_values('📅 Начало', ascending=False)
+    
+    fname = f"backtest_{call.from_user.id}.xlsx"
+    with pd.ExcelWriter(fname, engine='openpyxl') as w:
+        df.to_excel(w, sheet_name='Бэктест', index=False)
+        ws = w.sheets['Бэктест']
+        header_font = Font(bold=True, color="FFFFFF", size=11)
+        header_fill = PatternFill(start_color="2b6cb0", end_color="2b6cb0", fill_type="solid")
+        for col in range(1, len(df.columns)+1):
+            ws.cell(row=1, column=col).font = header_font
+            ws.cell(row=1, column=col).fill = header_fill
+        for col in range(1, len(df.columns)+1):
+            max_len = 0
+            col_letter = get_column_letter(col)
+            for row in range(1, len(df)+2):
+                v = ws.cell(row=row, column=col).value
+                if v:
+                    max_len = max(max_len, len(str(v)))
+            ws.column_dimensions[col_letter].width = min(max_len+2, 30)
+        ws.freeze_panes = 'A2'
+    
     await call.message.answer_document(document=FSInputFile(fname), caption="📊 Ваш отчёт (бэктест)")
     os.remove(fname)
     await call.answer()
@@ -1142,10 +1215,7 @@ async def backtest_clear_confirm(call: CallbackQuery):
 
 @dp.callback_query(F.data == "clear_yes")
 async def clear_backtest_yes(call: CallbackQuery):
-    conn = sqlite3.connect(BT_DB_NAME)
-    conn.execute("DELETE FROM backtests WHERE user_id = ?", (call.from_user.id,))
-    conn.commit()
-    conn.close()
+    clear_backtests(call.from_user.id)
     await call.message.edit_text("🗑 Бэктесты очищены!", reply_markup=backtest_menu())
     await call.answer()
 
