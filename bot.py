@@ -1979,6 +1979,13 @@ async def set_commands():
     ])
 
 async def main():
+    # Сначала удаляем вебхук, если был
+    try:
+        await bot.delete_webhook()
+        print("✅ Вебхук удалён")
+    except:
+        pass
+    
     init_dbs()
     await set_commands()
     print("✅ Бот успешно запущен!")
