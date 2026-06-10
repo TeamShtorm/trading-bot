@@ -831,6 +831,7 @@ class BacktestTradeForm(StatesGroup):
 # ==================================================
 # БЛОК 8: ВЕБ-СЕРВЕР ДЛЯ HEALTH CHECK (minimal)
 # ==================================================
+from aiohttp import web  # Убедитесь, что этот импорт есть в БЛОКЕ 1
 
 async def health_check(request):
     return web.Response(text="Bot is alive!")
@@ -845,7 +846,7 @@ async def run_web_server():
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
     print(f"🌐 Веб-сервер для health checks запущен на порту {port}")
-    # Бесконечно ждём, но не мешаем polling
+    # Бесконечно ждём, не мешая polling бота
     await asyncio.Event().wait()
 
 # ==================================================
@@ -2011,19 +2012,22 @@ async def set_commands():
     ])
 
 async def main():
-    # Удаляем вебхук на всякий случай
+    # Удаляем вебхук на случай, если он был установлен ранее
     try:
         await bot.delete_webhook()
         print("✅ Вебхук удалён")
-    except:
-        pass
+    except Exception as e:
+        print(f"⚠️ Не удалось удалить вебхук: {e}")
     
     init_dbs()
     await set_commands()
-    print("✅ Бот запущен и работает через polling")
+    print("✅ Бот успешно запущен!")
     
-    # Только polling, без веб-сервера
-    await dp.start_polling(bot)
+    # Запускаем веб-сервер и polling параллельно
+    await asyncio.gather(
+        run_web_server(),
+        dp.start_polling(bot)
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
