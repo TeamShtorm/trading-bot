@@ -22,17 +22,17 @@ DB_NAME = "trades.db"
 BT_DB_NAME = "backtests.db"
 TRADES_PER_PAGE = 5
 
-# =================================================
+# ==================================================
 # БЛОК 2: БАЗЫ ДАННЫХ РЕАЛЬНОЙ ТОРГОВЛИ
-# =================================================
-def  init_dbs ( ) :
-conn =     sqlite3.connect ( DB_NAME )
-    conn. execute ( """
+# ==================================================
+def init_dbs():
+    conn = sqlite3.connect(DB_NAME)
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
-            актив ТЕКСТ,
-            направление ТЕКСТ,
+            asset TEXT,
+            direction TEXT,
             entry_price REAL,
             exit_price REAL,
             volume REAL,
@@ -44,7 +44,7 @@ conn =     sqlite3.connect ( DB_NAME )
             emotion TEXT
         )
     """)
-    conn.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, lang TEXT DEFAULT 'ru')")
+    conn.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, lang TEXT DEFAULT 'en')")
     conn.commit()
     conn.close()
     init_backtest_db()
@@ -57,7 +57,7 @@ def get_user_lang(user_id):
     conn.close()
     if r and r[0] in ['ru', 'en']:
         return r[0]
-    return "en"  # Английский по умолчанию
+    return "en"
 
 def set_user_lang(user_id, lang):
     conn = sqlite3.connect(DB_NAME)
