@@ -1979,7 +1979,7 @@ async def set_commands():
     ])
 
 async def main():
-    # Сначала удаляем вебхук, если был
+    # Удаляем вебхук на всякий случай
     try:
         await bot.delete_webhook()
         print("✅ Вебхук удалён")
@@ -1988,13 +1988,10 @@ async def main():
     
     init_dbs()
     await set_commands()
-    print("✅ Бот успешно запущен!")
+    print("✅ Бот запущен и работает через polling")
     
-    # Запускаем веб-сервер и polling параллельно
-    await asyncio.gather(
-        run_web_server(),
-        dp.start_polling(bot)
-    )
+    # Только polling, без веб-сервера
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
