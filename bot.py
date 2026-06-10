@@ -66,6 +66,8 @@ def set_user_lang(user_id, lang):
     conn.close()
 
 def save_trade(user_id, asset, direction, entry_price, exit_price, volume, pnl, result, comment, trade_date, links, emotion):
+    print(f"DEBUG SAVE: trade_date={trade_date}, result={result}, pnl={pnl}")  # Временный дебаг
+    
     conn = sqlite3.connect(DB_NAME)
     conn.execute("""
         INSERT INTO trades (user_id, asset, direction, entry_price, exit_price, volume, pnl, result, comment, trade_date, links, emotion)
@@ -78,6 +80,7 @@ def get_trades_filtered(user_id, result_filter=None, asset_filter=None, date_fil
     conn = sqlite3.connect(DB_NAME)
     query = "SELECT * FROM trades WHERE user_id = ?"
     params = [user_id]
+    
     if result_filter and result_filter != "all":
         if result_filter == "take":
             query += " AND result = 'TAKE'"
@@ -85,17 +88,28 @@ def get_trades_filtered(user_id, result_filter=None, asset_filter=None, date_fil
             query += " AND result = 'STOP'"
         elif result_filter == "bu":
             query += " AND result = 'BU'"
+    
     if asset_filter:
         query += " AND asset = ?"
         params.append(asset_filter)
+    
     if date_filter:
         days = {"day": 1, "week": 7, "month": 30}
-        start = (datetime.now() - timedelta(days=days[date_filter])).strftime("%Y-%m-%d")
-        query += " AND trade_date >= ?"
-        params.append(start)
+        if date_filter in days:
+            start = (datetime.now() - timedelta(days=days[date_filter])).strftime("%Y-%m-%d")
+            query += " AND trade_date >= ?"
+            params.append(start)
+    
     query += " ORDER BY trade_date DESC"
+    
+    print(f"DEBUG SQL: {query}")  # Временный дебаг
+    print(f"DEBUG PARAMS: {params}")  # Временный дебаг
+    
     df = pd.read_sql_query(query, conn, params=params)
     conn.close()
+    
+    print(f"DEBUG ROWS: {len(df)}")  # Временный дебаг
+    
     return df
 
 def get_all_assets(user_id):
@@ -1272,19 +1286,19 @@ async def real_delete_execute(call: CallbackQuery, state: FSMContext):
     await state.clear()
     await call.message.edit_text("Сделка удалена!", reply_markup=real_menu())
     await call.answer()
-
 # ==================================================
 # БЛОК 12: ОБРАБОТЧИКИ СТАТИСТИКИ
 # ==================================================
 
 @dp.callback_query(F.data == "real_stats_show")
-async def real_stats_menu(call: CallbackQuery):
+async def real_stats_menu(call: CallbackQuery, state: FSMContext):
+    await state.clear()
     await call.message.edit_text("📊 Выберите тип статистики:", reply_markup=real_stats_main_kb())
     await call.answer()
 
 @dp.callback_query(F.data == "real_stats_all")
 async def real_stats_all(call: CallbackQuery):
-    df = get_trades_filtered(call.from_user.id)
+    df = get_trades_filtered(call.from_user.id, result_filter="all", asset_filter=None, date_filter=None)
     if df.empty:
         await call.message.edit_text("📭 Нет данных для статистики.", reply_markup=real_stats_main_kb())
         return
@@ -1310,7 +1324,7 @@ async def real_stats_by_asset_menu(call: CallbackQuery):
 @dp.callback_query(F.data.startswith("real_stats_asset_"))
 async def real_stats_asset_show(call: CallbackQuery):
     asset = call.data.split("_")[3]
-    df = get_trades_filtered(call.from_user.id, asset_filter=asset)
+    df = get_trades_filtered(call.from_user.id, asset_filter=asset, result_filter="all", date_filter=None)
     if df.empty:
         await call.message.edit_text(f"📭 Нет данных по активу {asset}.", reply_markup=real_stats_assets_kb(get_all_assets(call.from_user.id)))
         return
@@ -1332,7 +1346,7 @@ async def real_stats_by_date_menu(call: CallbackQuery):
 @dp.callback_query(F.data.startswith("real_stats_date_"))
 async def real_stats_date_show(call: CallbackQuery):
     period = call.data.split("_")[3]
-    df = get_trades_filtered(call.from_user.id, date_filter=period)
+    df = get_trades_filtered(call.from_user.id, date_filter=period, result_filter="all", asset_filter=None)
     titles = {"day": "📆 Статистика за сегодня", "week": "📅 Статистика за неделю", "month": "📊 Статистика за месяц"}
     if df.empty:
         await call.message.edit_text(f"📭 {titles.get(period, 'Статистика')}\n\nНет данных.", reply_markup=real_stats_date_kb())
@@ -1367,7 +1381,7 @@ async def real_stats_emotion_confidence(call: CallbackQuery):
     await show_emotion_stats(call, "Уверенность")
 
 async def show_emotion_stats(call: CallbackQuery, emotion: str):
-    df = get_trades_filtered(call.from_user.id)
+    df = get_trades_filtered(call.from_user.id, result_filter="all", asset_filter=None, date_filter=None)
     df = df[df['emotion'] == emotion]
     if df.empty:
         await call.message.edit_text(f"😊 Статистика по эмоции: {emotion}\n\nНет сделок с этой эмоцией.", reply_markup=real_stats_emotions_kb())
