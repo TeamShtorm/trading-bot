@@ -829,24 +829,22 @@ class BacktestTradeForm(StatesGroup):
     link_url = State()
 
 # ==================================================
-# БЛОК 8: ВЕБ-СЕРВЕР ДЛЯ HEALTH CHECK (minimal)
+# БЛОК 8: ФЕЙКОВЫЙ ВЕБ-СЕРВЕР ДЛЯ RENDER
 # ==================================================
-from aiohttp import web  # Убедитесь, что этот импорт есть в БЛОКЕ 1
+from aiohttp import web
 
 async def health_check(request):
-    return web.Response(text="Bot is alive!")
+    return web.Response(text="OK")
 
-async def run_web_server():
+async def run_fake_server():
     app = web.Application()
     app.router.add_get('/', health_check)
     app.router.add_get('/health', health_check)
     runner = web.AppRunner(app)
     await runner.setup()
-    port = int(os.environ.get("PORT", 10000))
-    site = web.TCPSite(runner, '0.0.0.0', port)
+    site = web.TCPSite(runner, '0.0.0.0', 10000)
     await site.start()
-    print(f"🌐 Веб-сервер для health checks запущен на порту {port}")
-    # Бесконечно ждём, не мешая polling бота
+    print("🎭 Фейковый сервер запущен на порту 10000")
     await asyncio.Event().wait()
 
 # ==================================================
@@ -2012,20 +2010,19 @@ async def set_commands():
     ])
 
 async def main():
-    # Удаляем вебхук на случай, если он был установлен ранее
     try:
         await bot.delete_webhook()
         print("✅ Вебхук удалён")
-    except Exception as e:
-        print(f"⚠️ Не удалось удалить вебхук: {e}")
+    except:
+        pass
     
     init_dbs()
     await set_commands()
-    print("✅ Бот успешно запущен!")
+    print("✅ Бот запущен")
     
-    # Запускаем веб-сервер и polling параллельно
+    # Запускаем фейковый сервер и polling
     await asyncio.gather(
-        run_web_server(),
+        run_fake_server(),
         dp.start_polling(bot)
     )
 
