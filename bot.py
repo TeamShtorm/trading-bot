@@ -514,24 +514,47 @@ def main_menu(lang):
         [InlineKeyboardButton(text=text_settings, callback_data="settings_menu")]
     ])
 
-def real_menu():
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="➕ Add Trade", callback_data="real_add_trade")],
-        [InlineKeyboardButton(text="📋 Trade List", callback_data="real_list_trades")],
-        [InlineKeyboardButton(text="📊 Statistics", callback_data="real_stats_show")],
-        [InlineKeyboardButton(text="📎 Excel", callback_data="real_excel")],
-        [InlineKeyboardButton(text="🗑 Clear All", callback_data="real_clear")],
-        [InlineKeyboardButton(text="🔙 Back", callback_data="back_to_mode_selection")]
-    ])
+def real_menu(lang=None):
+    if lang is None:
+        lang = "en"
+    if lang == "ru":
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="➕ Сделка", callback_data="real_add_trade")],
+            [InlineKeyboardButton(text="📋 Список сделок", callback_data="real_list_trades")],
+            [InlineKeyboardButton(text="📊 Статистика", callback_data="real_stats_show")],
+            [InlineKeyboardButton(text="📎 Excel", callback_data="real_excel")],
+            [InlineKeyboardButton(text="🗑 Очистить всё", callback_data="real_clear")],
+            [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_mode_selection")]
+        ])
+    else:
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="➕ Add Trade", callback_data="real_add_trade")],
+            [InlineKeyboardButton(text="📋 Trade List", callback_data="real_list_trades")],
+            [InlineKeyboardButton(text="📊 Statistics", callback_data="real_stats_show")],
+            [InlineKeyboardButton(text="📎 Excel", callback_data="real_excel")],
+            [InlineKeyboardButton(text="🗑 Clear All", callback_data="real_clear")],
+            [InlineKeyboardButton(text="🔙 Back", callback_data="back_to_mode_selection")]
+        ])
 
-def backtest_menu():
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="➕ New Period", callback_data="backtest_add_period")],
-        [InlineKeyboardButton(text="📋 Periods", callback_data="backtest_list_periods")],
-        [InlineKeyboardButton(text="📊 Statistics", callback_data="backtest_stats_list")],
-        [InlineKeyboardButton(text="📎 Excel", callback_data="backtest_excel_list")],
-        [InlineKeyboardButton(text="🔙 Back", callback_data="back_to_mode_selection")]
-    ])
+def backtest_menu(lang=None):
+    if lang is None:
+        lang = "en"
+    if lang == "ru":
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="➕ Новый период", callback_data="backtest_add_period")],
+            [InlineKeyboardButton(text="📋 Периоды", callback_data="backtest_list_periods")],
+            [InlineKeyboardButton(text="📊 Статистика", callback_data="backtest_stats_list")],
+            [InlineKeyboardButton(text="📎 Excel", callback_data="backtest_excel_list")],
+            [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_mode_selection")]
+        ])
+    else:
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="➕ New Period", callback_data="backtest_add_period")],
+            [InlineKeyboardButton(text="📋 Periods", callback_data="backtest_list_periods")],
+            [InlineKeyboardButton(text="📊 Statistics", callback_data="backtest_stats_list")],
+            [InlineKeyboardButton(text="📎 Excel", callback_data="backtest_excel_list")],
+            [InlineKeyboardButton(text="🔙 Back", callback_data="back_to_mode_selection")]
+        ])
 
 def backtest_periods_kb(periods, page, total_pages, action):
     buttons = []
@@ -806,7 +829,7 @@ class BacktestTradeForm(StatesGroup):
     link_url = State()
 
 # ==================================================
-# БЛОК 8: ВЕБ-СЕРВЕР ДЛЯ RENDER
+# БЛОК 8: ВЕБ-СЕРВЕР ДЛЯ HEALTH CHECK (minimal)
 # ==================================================
 
 async def health_check(request):
@@ -821,7 +844,8 @@ async def run_web_server():
     port = int(os.environ.get("PORT", 10000))
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
-    print(f"🌐 Веб-сервер запущен на порту {port}")
+    print(f"🌐 Веб-сервер для health checks запущен на порту {port}")
+    # Бесконечно ждём, но не мешаем polling
     await asyncio.Event().wait()
 
 # ==================================================
@@ -861,13 +885,15 @@ async def set_lang(call: CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data == "mode_real")
 async def mode_real(call: CallbackQuery, state: FSMContext):
     await state.clear()
-    await call.message.edit_text("📊 Реальная торговля\n\nВыберите действие:", reply_markup=real_menu())
+    lang = get_user_lang(call.from_user.id)
+    await call.message.edit_text("📊 Real Trading" if lang == "en" else "📊 Реальная торговля", reply_markup=real_menu(lang))
     await call.answer()
 
 @dp.callback_query(F.data == "mode_backtest")
 async def mode_backtest(call: CallbackQuery, state: FSMContext):
     await state.clear()
-    await call.message.edit_text("🔄 Бэктест\n\nВыберите действие:", reply_markup=backtest_menu())
+    lang = get_user_lang(call.from_user.id)
+    await call.message.edit_text("🔄 Backtest" if lang == "en" else "🔄 Бэктест", reply_markup=backtest_menu(lang))
     await call.answer()
 
 @dp.callback_query(F.data == "back_to_mode_selection")
@@ -1099,7 +1125,8 @@ async def finish_real_trade(call: CallbackQuery, state: FSMContext, emotion: str
         emotion=emotion
     )
     await state.clear()
-    await call.message.edit_text("✅ Сделка сохранена!", reply_markup=real_menu())
+    lang = get_user_lang(call.from_user.id)
+    await call.message.edit_text("✅ Trade saved!" if lang == "en" else "✅ Сделка сохранена!", reply_markup=real_menu(lang))
     await call.answer()
 
 # ==================================================
@@ -1511,12 +1538,16 @@ async def bt_export_period_excel(call: CallbackQuery):
     period_id = int(call.data.split("_")[2])
     period = get_backtest_period_by_id(period_id, call.from_user.id)
     if not period:
-        await call.answer("❌ Период не найден", show_alert=True)
+        await call.answer("❌ Period not found", show_alert=True)
         return
     trades = get_backtest_trades(period_id)
     if not trades:
-        await call.answer("📭 Нет сделок для экспорта", show_alert=True)
+        await call.answer("📭 No trades to export", show_alert=True)
         return
+    
+    # Получаем ссылки для этого периода
+    period_links = get_backtest_links(period_id)
+    links_text = "\n".join([f"{tf}: {link}" for tf, link in period_links]) if period_links else "-"
     
     data = []
     for t in trades:
@@ -1528,16 +1559,17 @@ async def bt_export_period_excel(call: CallbackQuery):
             'volume': t[5],
             'pnl': t[6],
             'result': t[7],
-            'comment': t[8]
+            'comment': t[8],
+            'links': links_text
         })
     df = pd.DataFrame(data)
     df['direction'] = df['direction'].replace({'LONG': '🟢 LONG', 'SHORT': '🔴 SHORT'})
-    df['result'] = df['result'].replace({'TAKE': '✅ Тейк', 'STOP': '❌ Стоп', 'BU': '⚖️ БУ'})
+    df['result'] = df['result'].replace({'TAKE': '✅ Take', 'STOP': '❌ Stop', 'BU': '⚖️ BU'})
     
     fname = f"backtest_period_{period_id}.xlsx"
     with pd.ExcelWriter(fname, engine='openpyxl') as w:
-        df.to_excel(w, sheet_name='Сделки', index=False)
-        ws = w.sheets['Сделки']
+        df.to_excel(w, sheet_name='Trades', index=False)
+        ws = w.sheets['Trades']
         header_font = Font(bold=True, color="FFFFFF", size=11)
         header_fill = PatternFill(start_color="2b6cb0", end_color="2b6cb0", fill_type="solid")
         for col in range(1, len(df.columns)+1):
@@ -1547,7 +1579,7 @@ async def bt_export_period_excel(call: CallbackQuery):
             max_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
             ws.column_dimensions[get_column_letter(df.columns.get_loc(col)+1)].width = min(max_len, 30)
     
-    await call.message.answer_document(document=FSInputFile(fname), caption=f"📊 Отчёт: {period[2]}")
+    await call.message.answer_document(document=FSInputFile(fname), caption=f"📊 Report: {period[2]}")
     os.remove(fname)
     await call.answer()
 
