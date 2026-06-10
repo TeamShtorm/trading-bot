@@ -22,17 +22,17 @@ DB_NAME = "trades.db"
 BT_DB_NAME = "backtests.db"
 TRADES_PER_PAGE = 5
 
-# ==================================================
+# =================================================
 # БЛОК 2: БАЗЫ ДАННЫХ РЕАЛЬНОЙ ТОРГОВЛИ
-# ==================================================
-def init_dbs():
-    conn = sqlite3.connect(DB_NAME)
-    conn.execute("""
+# =================================================
+def  init_dbs ( ) :
+conn =     sqlite3.connect ( DB_NAME )
+    conn. execute ( """
         CREATE TABLE IF NOT EXISTS trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
-            asset TEXT,
-            direction TEXT,
+            актив ТЕКСТ,
+            направление ТЕКСТ,
             entry_price REAL,
             exit_price REAL,
             volume REAL,
@@ -55,7 +55,9 @@ def get_user_lang(user_id):
     cur.execute("SELECT lang FROM users WHERE user_id = ?", (user_id,))
     r = cur.fetchone()
     conn.close()
-    return r[0] if r else "ru"
+    if r and r[0] in ['ru', 'en']:
+        return r[0]
+    return "en"  # Английский по умолчанию
 
 def set_user_lang(user_id, lang):
     conn = sqlite3.connect(DB_NAME)
@@ -497,29 +499,38 @@ def export_real_to_excel(df, user_id):
 
 # ---------- ОСНОВНЫЕ МЕНЮ ----------
 def main_menu(lang):
+    if lang == "ru":
+        text_real = "📊 Реальная торговля"
+        text_backtest = "🔄 Бэктест"
+        text_settings = "⚙️ Настройки"
+    else:
+        text_real = "📊 Real Trading"
+        text_backtest = "🔄 Backtest"
+        text_settings = "⚙️ Settings"
+    
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📊 Реальная торговля", callback_data="mode_real")],
-        [InlineKeyboardButton(text="🔄 Бэктест", callback_data="mode_backtest")],
-        [InlineKeyboardButton(text="⚙️ Настройки", callback_data="settings_menu")]
+        [InlineKeyboardButton(text=text_real, callback_data="mode_real")],
+        [InlineKeyboardButton(text=text_backtest, callback_data="mode_backtest")],
+        [InlineKeyboardButton(text=text_settings, callback_data="settings_menu")]
     ])
 
 def real_menu():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="➕ Сделка", callback_data="real_add_trade")],
-        [InlineKeyboardButton(text="📋 Список сделок", callback_data="real_list_trades")],
-        [InlineKeyboardButton(text="📊 Статистика", callback_data="real_stats_show")],
+        [InlineKeyboardButton(text="➕ Add Trade", callback_data="real_add_trade")],
+        [InlineKeyboardButton(text="📋 Trade List", callback_data="real_list_trades")],
+        [InlineKeyboardButton(text="📊 Statistics", callback_data="real_stats_show")],
         [InlineKeyboardButton(text="📎 Excel", callback_data="real_excel")],
-        [InlineKeyboardButton(text="🗑 Очистить всё", callback_data="real_clear")],
-        [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_mode_selection")]
+        [InlineKeyboardButton(text="🗑 Clear All", callback_data="real_clear")],
+        [InlineKeyboardButton(text="🔙 Back", callback_data="back_to_mode_selection")]
     ])
 
 def backtest_menu():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="➕ Новый период", callback_data="backtest_add_period")],
-        [InlineKeyboardButton(text="📋 Периоды", callback_data="backtest_list_periods")],
-        [InlineKeyboardButton(text="📊 Статистика", callback_data="backtest_stats_list")],
+        [InlineKeyboardButton(text="➕ New Period", callback_data="backtest_add_period")],
+        [InlineKeyboardButton(text="📋 Periods", callback_data="backtest_list_periods")],
+        [InlineKeyboardButton(text="📊 Statistics", callback_data="backtest_stats_list")],
         [InlineKeyboardButton(text="📎 Excel", callback_data="backtest_excel_list")],
-        [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_mode_selection")]
+        [InlineKeyboardButton(text="🔙 Back", callback_data="back_to_mode_selection")]
     ])
 
 def backtest_periods_kb(periods, page, total_pages, action):
@@ -631,16 +642,16 @@ def backtest_timeframe_kb():
 # ---------- ОБЩИЕ КЛАВИАТУРЫ ----------
 def settings_menu_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🌐 Сменить язык", callback_data="change_lang")],
-        [InlineKeyboardButton(text="📞 Поддержка", url="https://t.me/TJsupport_bot")],
-        [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_mode_selection")]
+        [InlineKeyboardButton(text="🌐 Change Language", callback_data="change_lang")],
+        [InlineKeyboardButton(text="📞 Support", url="https://t.me/TJsupport_bot")],
+        [InlineKeyboardButton(text="🔙 Back", callback_data="back_to_mode_selection")]
     ])
 
 def lang_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="lang_ru")],
         [InlineKeyboardButton(text="🇬🇧 English", callback_data="lang_en")],
-        [InlineKeyboardButton(text="🔙 Назад", callback_data="settings_menu")]
+        [InlineKeyboardButton(text="🔙 Back", callback_data="settings_menu")]
     ])
 
 def back_kb():
@@ -797,47 +808,19 @@ class BacktestTradeForm(StatesGroup):
 # ==================================================
 # БЛОК 8: ВЕБ-СЕРВЕР ДЛЯ RENDER
 # ==================================================
-from aiogram.types import Update
-
-WEBHOOK_PATH = "/webhook"
 
 async def health_check(request):
     return web.Response(text="Bot is alive!")
 
-async def webhook_handler(request):
-    try:
-        update_data = await request.json()
-        update = Update.model_validate(update_data, context={"bot": bot})
-        await dp.feed_update(bot, update)
-        return web.Response(text="OK")
-    except Exception as e:
-        print(f"Webhook error: {e}")
-        return web.Response(text="Error", status=500)
-
-async def on_startup():
-    await bot.delete_webhook()
-    render_url = os.environ.get("RENDER_EXTERNAL_URL")
-    if render_url:
-        webhook_url = f"{render_url}{WEBHOOK_PATH}"
-        await bot.set_webhook(webhook_url)
-        print(f"✅ Webhook установлен: {webhook_url}")
-    else:
-        print("⚠️ RENDER_EXTERNAL_URL не найден")
-
 async def run_web_server():
-    await on_startup()
-    
     app = web.Application()
     app.router.add_get('/', health_check)
     app.router.add_get('/health', health_check)
-    app.router.add_post(WEBHOOK_PATH, webhook_handler)
-    
     runner = web.AppRunner(app)
     await runner.setup()
     port = int(os.environ.get("PORT", 10000))
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
-    
     print(f"🌐 Веб-сервер запущен на порту {port}")
     await asyncio.Event().wait()
 
@@ -858,10 +841,10 @@ async def cmd_start(msg: Message, state: FSMContext):
     await state.clear()
     uid = msg.from_user.id
     lang = get_user_lang(uid)
-    if lang is None or lang not in ['ru', 'en']:
-        await msg.answer("🌐 Выберите язык / Choose language:", reply_markup=lang_kb())
-        return
-    await msg.answer("🎛 Выберите режим работы:", reply_markup=main_menu(lang))
+    if lang == "en":
+        await msg.answer("🎛 Select mode:", reply_markup=main_menu(lang))
+    else:
+        await msg.answer("🎛 Выберите режим работы:", reply_markup=main_menu(lang))
 
 @dp.callback_query(F.data.startswith("lang_"))
 async def set_lang(call: CallbackQuery, state: FSMContext):
@@ -869,7 +852,10 @@ async def set_lang(call: CallbackQuery, state: FSMContext):
     set_user_lang(call.from_user.id, lang)
     await state.clear()
     await call.message.delete()
-    await call.message.answer("🎛 Выберите режим работы:", reply_markup=main_menu(lang))
+    if lang == "en":
+        await call.message.answer("🎛 Select mode:", reply_markup=main_menu(lang))
+    else:
+        await call.message.answer("🎛 Выберите режим работы:", reply_markup=main_menu(lang))
     await call.answer()
 
 @dp.callback_query(F.data == "mode_real")
@@ -910,7 +896,7 @@ async def settings_menu(call: CallbackQuery):
 
 @dp.callback_query(F.data == "change_lang")
 async def change_lang(call: CallbackQuery):
-    await call.message.edit_text("🌐 Выберите язык / Choose language:", reply_markup=lang_kb())
+    await call.message.edit_text("🌐 Select language:", reply_markup=lang_kb())
     await call.answer()
 
 # ---------- ОТМЕНА НЕЗАВЕРШЁННОЙ СДЕЛКИ (РЕАЛЬНАЯ ТОРГОВЛЯ) ----------
@@ -1996,8 +1982,12 @@ async def main():
     init_dbs()
     await set_commands()
     print("✅ Бот успешно запущен!")
-    # Только веб-сервер с вебхуком, никакого polling
-    await run_web_server()
+    
+    # Запускаем веб-сервер и polling параллельно
+    await asyncio.gather(
+        run_web_server(),
+        dp.start_polling(bot)
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
